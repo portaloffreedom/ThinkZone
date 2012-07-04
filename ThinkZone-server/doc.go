@@ -1,6 +1,6 @@
-// ThinkZone project doc.go
+// ThinkZone-server project doc.go
 
 /*
-ThinkZone document
+ThinkZone-server document
 */
 package documentation
