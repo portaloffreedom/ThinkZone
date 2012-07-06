@@ -56,6 +56,9 @@ func TestSuperString(test *testing.T) {
 	testEqual("11!###99", "11!###[6]99[2]")
 
 	prova.insElem("tro", 2)
-	testEqual("1tro1!99", "11tro[5]!###[4]99[2]")
+	testEqual("11tro!###99", "11tro[5]!###[4]99[2]")
+
+	prova.delElem(2, 1)
+	testEqual("1tro!###99", "1tro[5]!###[4]99[2]")
 
 }

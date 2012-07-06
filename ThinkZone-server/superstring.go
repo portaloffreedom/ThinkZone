@@ -106,6 +106,8 @@ func (lista *SuperString) insElem(appendStr string, pos int) {
 		return
 	}
 
+	//roRebuildTotal = true
+
 	//TODO eliminare questa parte
 	if pos == 0 {
 		lista.testa = NewElemSuperString(nil, lista.testa)
@@ -146,6 +148,7 @@ func (lista *SuperString) insElem(appendStr string, pos int) {
 		tmp := NewElemSuperString(posAttuale, posAttuale.succ)
 		posAttuale.succ.prec = tmp
 		posAttuale.succ = tmp
+		lista.dim += 1
 
 		//split := strings.Fields(posAttuale.elemento)
 
@@ -168,25 +171,6 @@ func (lista *SuperString) insElem(appendStr string, pos int) {
 //	lista.insElem(append("", appendChar), pos)
 //}
 
-func (lista *SuperString) delSingleElem(elemento *elemSuperString) {
-	if elemento.succ != nil {
-		elemento.succ.prec = elemento.prec
-	}
-
-	if elemento.prec != nil {
-		elemento.prec.succ = elemento.succ
-	} else {
-		lista.testa = elemento.succ
-	}
-
-	if lista.testa == nil {
-		lista.testa = NewElemSuperString(nil, nil)
-	}
-
-	//delete elemento
-	elemento = nil
-}
-
 func (lista *SuperString) delElem(pos int, howmany int) {
 	if pos < 0 {
 		fmt.Println("che cazzo stai cercando di eliminare???")
@@ -203,7 +187,16 @@ func (lista *SuperString) delElem(pos int, howmany int) {
 	}
 
 	//elimina prima stringa
-	//quanti_eliminare := howmany
+	quanti_eliminare := howmany
+	if pos+howmany <= posAttuale.size { //elimina solo posizione attuale
+		vecchio := posAttuale.elemento
+		posAttuale.elemento = strings.Join([]string{vecchio[0:pos], vecchio[pos+howmany : posAttuale.size]}, "") //remove dalla stringa corrente
+		posAttuale.size -= quanti_eliminare
+		if posAttuale.size == 0 {
+			lista.delSingleElem(posAttuale)
+		}
+		return
+	}
 }
 
 /*
@@ -255,3 +248,22 @@ void SuperString::delElem(int pos, const int howmany){
 
 
 }*/
+
+func (lista *SuperString) delSingleElem(elemento *elemSuperString) {
+	if elemento.succ != nil {
+		elemento.succ.prec = elemento.prec
+	}
+
+	if elemento.prec != nil {
+		elemento.prec.succ = elemento.succ
+	} else {
+		lista.testa = elemento.succ
+	}
+
+	if lista.testa == nil {
+		lista.testa = NewElemSuperString(nil, nil)
+	}
+
+	//delete elemento
+	elemento = nil
+}
