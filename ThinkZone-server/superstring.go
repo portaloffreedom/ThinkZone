@@ -171,7 +171,15 @@ func (lista *SuperString) insElem(appendStr string, pos int) {
 //	lista.insElem(append("", appendChar), pos)
 //}
 
+// remove dalla stringa corrente
+func removeFromString(s string, s_size int, pos int, howmany int) string {
+
+	return strings.Join([]string{s[0:pos], s[pos+howmany : s_size]}, "")
+
+}
+
 func (lista *SuperString) delElem(pos int, howmany int) {
+	pos--
 	if pos < 0 {
 		fmt.Println("che cazzo stai cercando di eliminare???")
 		return
@@ -189,55 +197,55 @@ func (lista *SuperString) delElem(pos int, howmany int) {
 	//elimina prima stringa
 	quanti_eliminare := howmany
 	if pos+howmany <= posAttuale.size { //elimina solo posizione attuale
-		vecchio := posAttuale.elemento
-		posAttuale.elemento = strings.Join([]string{vecchio[0:pos], vecchio[pos+howmany : posAttuale.size]}, "") //remove dalla stringa corrente
+		//vecchio := posAttuale.elemento
+		//posAttuale.elemento = strings.Join([]string{vecchio[0:pos], vecchio[pos+howmany : posAttuale.size]}, "") //remove dalla stringa corrente
+		posAttuale.elemento = removeFromString(posAttuale.elemento, posAttuale.size, pos, howmany)
 		posAttuale.size -= quanti_eliminare
 		if posAttuale.size == 0 {
 			lista.delSingleElem(posAttuale)
 		}
 		return
 	}
+
+	quanti_eliminare = posAttuale.size - pos
+	posAttuale.elemento = removeFromString(posAttuale.elemento, posAttuale.size, pos, quanti_eliminare)
+	posAttuale.size -= quanti_eliminare
+
+	if posAttuale.size == 0 {
+		tmp := posAttuale.succ
+		lista.delSingleElem(posAttuale)
+		posAttuale = tmp
+		if posAttuale == nil {
+			posAttuale = lista.testa
+		}
+	} else {
+		posAttuale = posAttuale.succ
+	}
+
+	//elimina le stringhe di mezzo
+	quanti_eliminare = howmany - quanti_eliminare
+
+	for posAttuale.succ != nil && quanti_eliminare >= posAttuale.size {
+		quanti_eliminare -= posAttuale.size
+
+		tmp := posAttuale.succ
+		lista.delSingleElem(posAttuale)
+		posAttuale = tmp
+	}
+
+	//elimina ultima stringa
+	if posAttuale.size == quanti_eliminare {
+		lista.delSingleElem(posAttuale)
+	} else {
+		posAttuale.elemento = removeFromString(posAttuale.elemento, posAttuale.size, 0, quanti_eliminare)
+		posAttuale.size -= quanti_eliminare
+	}
 }
 
 /*
 void SuperString::delElem(int pos, const int howmany){
 .....
-    //elimina prima stringa
-    int quanti_eliminare = howmany;
-    if (pos+howmany <= posAttuale->size) {   //elimina solo posizione attuale
-        posAttuale->elem->remove(pos,quanti_eliminare);
-        posAttuale->size -= quanti_eliminare;
-        if (posAttuale->size == 0)
-            delSingleElem(posAttuale);
-        return;
-    }
-    quanti_eliminare = posAttuale->size-pos;
-    posAttuale->elem->remove(pos,quanti_eliminare);
-    posAttuale->size -= (quanti_eliminare);
-
-    if (posAttuale->size == 0) {
-        elemListaString* temp = posAttuale->succ;
-        delSingleElem(posAttuale);
-        posAttuale = temp;
-        if (posAttuale == NULL)
-            posAttuale = testa;
-    }
-    else
-        posAttuale = posAttuale->succ;
-
-    //elimina stringhe di mezzo
-    quanti_eliminare = howmany - quanti_eliminare;
-
-    while (posAttuale->succ != NULL && quanti_eliminare >= posAttuale->size) {
-        quanti_eliminare -= posAttuale->size;
-
-        elemListaString* temp = posAttuale->succ;
-        delSingleElem(posAttuale);
-        posAttuale = temp;
-    }
-
     //elimina ultima stringa
-
     if (posAttuale->size == quanti_eliminare){
         delSingleElem(posAttuale);
     }
@@ -262,6 +270,8 @@ func (lista *SuperString) delSingleElem(elemento *elemSuperString) {
 
 	if lista.testa == nil {
 		lista.testa = NewElemSuperString(nil, nil)
+	} else {
+		lista.dim--
 	}
 
 	//delete elemento
