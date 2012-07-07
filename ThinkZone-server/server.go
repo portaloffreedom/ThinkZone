@@ -32,8 +32,8 @@ func NewClient(conn *net.Conn) *Client {
 		fmt.Println((*conn).RemoteAddr())
 	}
 	client.username = strings.Trim(s, "\\")
-	var exists bool
-	client.userid, exists = AddUserId(client.username)
+	var newuser bool
+	client.userid, exists = data.ConnectUserId(client.username)
 	if !exists {
 		fmt.Println("impossibile connettere di nuovo lo stesso userid")
 		return nil
@@ -86,7 +86,7 @@ func gestisciClient(conn net.Conn) (*Client, func(chan *Client)) {
 }
 
 func flasher(codaCiclica *list.List, readiness chan *Client) {
-	//TODO invece di fare un flush disordinato, raccogli le comunicazioni dello stesso client in un unico swap di utente che scrive...
+	//invece di fare un flush disordinato, raccogli le comunicazioni dello stesso client in un unico swap di utente che scrive...
 	//	for {
 	//		for e := codaCiclica.Front(); e != nil; e = e.Next() {
 	//			client := e.Value.(*bufio.Writer)
