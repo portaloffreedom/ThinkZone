@@ -172,6 +172,7 @@ func (lista *SuperString) insElem(appendStr string, pos int) {
 //}
 
 func (lista *SuperString) delElem(pos int, howmany int) {
+	pos--
 	if pos < 0 {
 		fmt.Println("che cazzo stai cercando di eliminare???")
 		return
@@ -262,6 +263,8 @@ func (lista *SuperString) delSingleElem(elemento *elemSuperString) {
 
 	if lista.testa == nil {
 		lista.testa = NewElemSuperString(nil, nil)
+	} else {
+		lista.dim--
 	}
 
 	//delete elemento
