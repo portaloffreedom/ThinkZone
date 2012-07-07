@@ -85,5 +85,15 @@ func TestSuperString(test *testing.T) {
 	prova.delElem(1, 3)
 	testEqual("99", "99[2]")
 
+	//#11
+	prova.insElem("porcoDioZoccolo", 0)
+	prova.insElem(" ", 8)
+	prova.insElem(" ", 5)
+	testEqual("porco Dio Zoccolo99", "porco [6]Dio [4]Zoccolo[7]99[2]")
+
+	//#12
+	prova.delElem(4, 15)
+	testEqual("por9", "por[3]9[1]")
+
 	fmt.Println()
 }
