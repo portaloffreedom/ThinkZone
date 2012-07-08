@@ -95,18 +95,94 @@ func gestisciClient(conn net.Conn) (*Client, func(chan *Client)) {
 		}
 	}
 }
+func mangiaCarattereDiControllo(c byte, input chan byte) bool {
+	d := <-input
+	if c == d {
+		return true
+	}
+	//else
+	return false
+}
+
+func mangiaIntero(input chan byte) (valore int, lastRead byte) {
+	buffer := make([]byte, 32, 32)
+	for i := 0; i < 32; i++ {
+		//		buffer = buffer[i+1]
+		b := <-input
+		fmt.Print(string(b))
+		buffer[i] = b
+		switch b {
+		case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0':
+		default:
+			lastRead = buffer[i]
+			buffer = buffer[:i]
+
+			valore64, err := strconv.ParseInt(string(buffer), 10, 8)
+			if err != nil {
+				fmt.Println("ERRORE nel convertire string in int")
+			}
+			valore = int(valore64)
+			return
+		}
+	}
+
+	return -1, 0
+}
+
+//this function should run as goroutine
+func gestisciTestoConversazione(input chan byte) {
+	activeUser := data.GetUserByID(0)
+	cursor := 0
+	for {
+		c := <-input
+		switch c {
+		case '\\': //caso di carattere di controllo
+			cc := <-input
+			switch cc {
+			case 'P':
+				cursor, cc = mangiaIntero(input)
+				if cc != '\\' {
+					fmt.Println("ERRORE lettura stream: carattere di controllo mangiato non Intero")
+				}
+			case 'D':
+				howmany, ccc := mangiaIntero(input)
+				if ccc != '\\' {
+					fmt.Println("ERRORE lettura stream: carattere di controllo mangiato non Intero")
+				}
+				cursor -= howmany
+				//TODO rimuovi testo
+				mainConv.testaPost.Text(activeUser).delElem(cursor, howmany)
+			case 'U':
+				newUserID, ccc := mangiaIntero(input)
+				if ccc != '\\' {
+					fmt.Println("ERRORE lettura stream: carattere di controllo mangiato non Intero")
+				}
+				activeUser = data.GetUserByID(newUserID)
+
+			case '\\':
+				mainConv.testaPost.Text(activeUser).insElem("\\", cursor)
+
+			default:
+				fmt.Println("ERRORE azione", cc, "non disponibile")
+			}
+
+		default:
+			mainConv.testaPost.Text(activeUser).insElem(string(c), cursor)
+			cursor++
+
+			fmt.Println("---", mainConv.testaPost.Text(activeUser).GetComplete(true), "---") //DEBUG
+
+			//TODO anche qui si può pensare ad un flasher a tempo per minimizzare il lavoro su superstring
+		}
+	}
+}
 
 func flasher(codaCiclica *list.List, readiness chan *Client) {
-	//invece di fare un flush disordinato, raccogli le comunicazioni dello stesso client in un unico swap di utente che scrive...
-	//	for {
-	//		for e := codaCiclica.Front(); e != nil; e = e.Next() {
-	//			client := e.Value.(*bufio.Writer)
-	//			client.Flush()
-	//		}
-	//		time.Sleep(20 * time.Millisecond)
-	//	}
 	tempoDaAspettare := 20 * time.Millisecond
 	var lastActiveUser int = -1
+	toSuperString := make(chan byte, 256)
+
+	go gestisciTestoConversazione(toSuperString)
 
 	for {
 		start := time.Now()
@@ -132,6 +208,7 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 			var err error
 			for i := chiSonoSSize; i < chiSonoSSize+daLeggere; i++ {
 				buffer[i], err = clientAttivo.stream.ReadByte()
+				toSuperString <- buffer[i]
 				if err != nil {
 					//TODO gestisci errore
 					fmt.Println("Errore nel leggere dalla rete")

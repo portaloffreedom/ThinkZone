@@ -97,6 +97,10 @@ func (lista *SuperString) GetComplete(separators bool) string {
 
 func (lista *SuperString) insElem(appendStr string, pos int) {
 
+	if lista.dim == 1 && lista.testa.size == 0 {
+		pos = -1
+	}
+
 	if lista.testa == nil {
 		lista.testa = NewElemSuperString(nil, nil)
 	}
@@ -146,7 +150,9 @@ func (lista *SuperString) insElem(appendStr string, pos int) {
 	} else {
 		//fmt.Println("SuperString: scindo due strighe")
 		tmp := NewElemSuperString(posAttuale, posAttuale.succ)
-		posAttuale.succ.prec = tmp
+		if posAttuale.succ != nil {
+			posAttuale.succ.prec = tmp
+		}
 		posAttuale.succ = tmp
 		lista.dim += 1
 
@@ -179,11 +185,11 @@ func removeFromString(s string, s_size int, pos int, howmany int) string {
 }
 
 func (lista *SuperString) delElem(pos int, howmany int) {
-	pos--
 	if pos < 0 {
 		fmt.Println("che cazzo stai cercando di eliminare???")
 		return
 	}
+	//	pos--
 
 	//roRebuildTotal = true
 
@@ -199,11 +205,12 @@ func (lista *SuperString) delElem(pos int, howmany int) {
 	if pos+howmany <= posAttuale.size { //elimina solo posizione attuale
 		//vecchio := posAttuale.elemento
 		//posAttuale.elemento = strings.Join([]string{vecchio[0:pos], vecchio[pos+howmany : posAttuale.size]}, "") //remove dalla stringa corrente
+		if (posAttuale.size - quanti_eliminare) == 0 {
+			lista.delSingleElem(posAttuale)
+			return
+		}
 		posAttuale.elemento = removeFromString(posAttuale.elemento, posAttuale.size, pos, howmany)
 		posAttuale.size -= quanti_eliminare
-		if posAttuale.size == 0 {
-			lista.delSingleElem(posAttuale)
-		}
 		return
 	}
 

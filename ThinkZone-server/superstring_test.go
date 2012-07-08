@@ -50,7 +50,7 @@ func TestSuperString(test *testing.T) {
 	testEqual("", "[0]")
 
 	//#2 ---insert---
-	prova.insElem("99", -1)
+	prova.insElem("99", 0)
 	testEqual("99", "99[2]")
 
 	//#3
@@ -96,4 +96,19 @@ func TestSuperString(test *testing.T) {
 	testEqual("por9", "por[3]9[1]")
 
 	fmt.Println()
+}
+
+func TestSuperString2(test *testing.T) {
+	prova := NewSuperString()
+	testEqual := getTestEqual("secondo", test, prova)
+
+	//#1
+	testEqual("", "[0]")
+
+	prova.insElem("Australopitecus---", 0)
+	testEqual("Australopitecus---", "Australopitecus---[18]")
+
+	prova.insElem("0", 16)
+	testEqual("Australopitecus-0--", "Australopitecus-0[17]--[2]")
+
 }

@@ -12,10 +12,11 @@ type User struct {
 
 type databaseRegistration struct {
 	UserNameToId map[string]*User
+	UserIDtoUser map[int]*User
 	contatore    int //sostituire con lista degli id non usati
 }
 
-var data databaseRegistration = databaseRegistration{make(map[string]*User), 0}
+var data databaseRegistration = databaseRegistration{make(map[string]*User), make(map[int]*User), 0}
 
 //this function assign an id to an username
 //return the id assigned
@@ -31,6 +32,7 @@ func (datab *databaseRegistration) ConnectUser(s string) (user *User, newuser bo
 		user.id = datab.contatore
 		user.username = s
 		datab.UserNameToId[s] = user
+		datab.UserIDtoUser[user.id] = user
 
 		newuser = true
 	} else {
@@ -58,7 +60,10 @@ func (datab *databaseRegistration) AddUserId(s string) (int, bool) {
 	return 0, false
 }*/
 
-func (datab *databaseRegistration) GetUserId(s string) int {
-	user := datab.UserNameToId[s]
-	return user.id
+func (datab *databaseRegistration) GetUserByName(s string) *User {
+	return datab.UserNameToId[s]
+}
+
+func (datab *databaseRegistration) GetUserByID(id int) *User {
+	return datab.UserIDtoUser[id]
 }
