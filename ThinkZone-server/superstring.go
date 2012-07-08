@@ -189,8 +189,6 @@ func (lista *SuperString) delElem(pos int, howmany int) {
 		fmt.Println("che cazzo stai cercando di eliminare???")
 		return
 	}
-	//	pos--
-
 	//roRebuildTotal = true
 
 	posAttuale := lista.testa
