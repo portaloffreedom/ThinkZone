@@ -2,6 +2,7 @@
 package main
 
 import (
+	//	"ThinkZoneDatabase"
 	"bufio"
 	"container/list"
 	"fmt"
@@ -19,7 +20,16 @@ type Client struct {
 	blocco   chan int
 	username string
 	userid   int
+	user     *User
 }
+
+var serverFakeUser User = User{42, "server"}
+var mainConv *Conversation /*{	"prova",
+1,
+connected     map[int]*User
+postMap       map[int]*Post
+contatorePost int
+testaPost     *Post	 }*/
 
 func NewClient(conn *net.Conn) *Client {
 	var client *Client = new(Client)
@@ -33,8 +43,8 @@ func NewClient(conn *net.Conn) *Client {
 	}
 	client.username = strings.Trim(s, "\\")
 	var newuser bool
-	client.userid, exists = data.ConnectUserId(client.username)
-	if !exists {
+	client.user, newuser = data.ConnectUser(client.username)
+	if !newuser {
 		fmt.Println("impossibile connettere di nuovo lo stesso userid")
 		return nil
 	}
@@ -162,12 +172,14 @@ func spedisci(codaNewConn chan *Client, readiness chan *Client) {
 	}
 }
 
-func StarServer(laddr string) {
+func StartServer(laddr string) {
 	ln, err := net.Listen("tcp", laddr)
 	if err != nil {
 		fmt.Println("Errore nell'aprire la connessione")
 		//TODO handle error
 	}
+
+	mainConv = NewConversation(&serverFakeUser)
 
 	//canale := make(chan byte, 256)
 	codaReadiness := make(chan *Client, 64)

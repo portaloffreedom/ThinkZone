@@ -12,7 +12,7 @@ import (
 func main() {
 	fmt.Println("Hello## World!")
 
-	StarServer(":4242")
+	StartServer(":4242")
 
 	//lingua := NewSuperString()
 	//fmt.Println(lingua.GetCompleteWithSeparators("]["))

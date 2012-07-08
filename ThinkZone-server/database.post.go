@@ -11,6 +11,13 @@ type ConversationError struct {
 	conv           *Conversation
 }
 
+func NewConversationError(errExplanation string, conv *Conversation) *ConversationError {
+	err := new(ConversationError)
+	err.errExplanation = errExplanation
+	err.conv = conv
+	return err
+}
+
 func (err *ConversationError) Error() string {
 	return "Errore nella conversazione: " + err.conv.title + "\n" + err.errExplanation
 }
@@ -56,7 +63,7 @@ func (post *Post) Text(user *User) *SuperString {
 }
 
 func (post *Post) Respond(conv *Conversation, user *User) *Post {
-	response = conv.NewPost(user, post)
+	response := conv.NewPost(user, post)
 	post.risposte.PushBack(response)
 	return response
 }
@@ -79,13 +86,15 @@ func NewConversation(creator *User) *Conversation {
 
 	conv.contatorePost = 1
 	conv.connected[creator.id] = creator
-	conv.testaPost = conv.NewPost(creator, nil, nil, nil)
+	conv.testaPost = conv.NewPost(creator, nil)
+
+	return conv
 }
 
 func (conv *Conversation) NewUserConnection(user *User) *ConversationError {
 
 	if conv.connected[user.id] != nil {
-		return ConversationError{"L'utente " + user.username + " è già connesso", conv}
+		return NewConversationError("L'utente "+user.username+" è già connesso", conv)
 	}
 
 	conv.connected[user.id] = user
@@ -95,10 +104,8 @@ func (conv *Conversation) NewUserConnection(user *User) *ConversationError {
 
 //create a post in response of the given post
 func (conv *Conversation) ResponseToPost(idPost int, user *User) *Post {
-	//TODO Conversation.ResponseToPost
-
 	padre := conv.postMap[idPost]
-	risposta = padre.Respond(conv, user)
+	risposta := padre.Respond(conv, user)
 
 	return risposta
 }

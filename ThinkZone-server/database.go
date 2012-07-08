@@ -20,20 +20,19 @@ var data databaseRegistration = databaseRegistration{make(map[string]*User), 0}
 //this function assign an id to an username
 //return the id assigned
 //return false if the id already existed, true if a new one was assigned
-func (datab *databaseRegistration) connectUser(s string) (id int, newuser bool) {
-	user := datab.UserNameToId[s]
+//TODO sostituire questa funzione con 2 diverse: login e createUser
+func (datab *databaseRegistration) ConnectUser(s string) (user *User, newuser bool) {
+	user = datab.UserNameToId[s]
 
 	if user == nil {
 		datab.contatore++
-		user = new(UserStatus)
+		user = new(User)
 		user.id = datab.contatore
+		user.username = s
 		datab.UserNameToId[s] = user
-		//return id, true
+
 		newuser = true
 	} else {
-		//return id, false
-		user = testuser
-		//if ...//TODO ripensare tutta questa parte...
 		newuser = false
 	}
 
@@ -41,6 +40,7 @@ func (datab *databaseRegistration) connectUser(s string) (id int, newuser bool) 
 
 }
 
+/*
 //deprecated
 func (datab *databaseRegistration) AddUserId(s string) (int, bool) {
 	id := datab.UserNameToId[s]
@@ -55,9 +55,9 @@ func (datab *databaseRegistration) AddUserId(s string) (int, bool) {
 		return 0, false
 	}
 	return 0, false
-}
+}*/
 
 func (datab *databaseRegistration) GetUserId(s string) int {
-	id := datab.UserNameToId[s]
-	return id
+	user := datab.UserNameToId[s]
+	return user.id
 }
