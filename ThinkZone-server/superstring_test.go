@@ -50,19 +50,19 @@ func TestSuperString(test *testing.T) {
 	testEqual("", "[0]")
 
 	//#2 ---insert---
-	prova.insElem("99", 0)
+	prova.insStringElem("99", 0)
 	testEqual("99", "99[2]")
 
 	//#3
-	prova.insElem("12!", 0)
+	prova.insStringElem("12!", 0)
 	testEqual("12!99", "12![3]99[2]")
 
 	//#4
-	prova.insElem("###", 3)
+	prova.insStringElem("###", 3)
 	testEqual("12!###99", "12!###[6]99[2]")
 
 	//#5
-	prova.insElem("tro", 2)
+	prova.insStringElem("tro", 2)
 	testEqual("12tro!###99", "12tro[5]!###[4]99[2]")
 
 	//#6 ----delete----
@@ -86,9 +86,9 @@ func TestSuperString(test *testing.T) {
 	testEqual("99", "99[2]")
 
 	//#11
-	prova.insElem("porcoDioZoccolo", 0)
-	prova.insElem(" ", 8)
-	prova.insElem(" ", 5)
+	prova.insStringElem("porcoDioZoccolo", 0)
+	prova.insStringElem(" ", 8)
+	prova.insStringElem(" ", 5)
 	testEqual("porco Dio Zoccolo99", "porco [6]Dio [4]Zoccolo[7]99[2]")
 
 	//#12
@@ -105,10 +105,10 @@ func TestSuperString2(test *testing.T) {
 	//#1
 	testEqual("", "[0]")
 
-	prova.insElem("Australopitecus---", 0)
+	prova.insStringElem("Australopitecus---", 0)
 	testEqual("Australopitecus---", "Australopitecus---[18]")
 
-	prova.insElem("0", 16)
+	prova.insStringElem("0", 16)
 	testEqual("Australopitecus-0--", "Australopitecus-0[17]--[2]")
 
 }

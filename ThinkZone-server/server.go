@@ -160,14 +160,14 @@ func gestisciTestoConversazione(input chan rune) {
 				activeUser = data.GetUserByID(newUserID)
 
 			case '\\':
-				mainConv.testaPost.Text(activeUser).insElem("\\", cursor)
+				mainConv.testaPost.Text(activeUser).insSingleElem('\\', cursor)
 
 			default:
 				fmt.Println("ERRORE azione", cc, "non disponibile")
 			}
 
 		default:
-			mainConv.testaPost.Text(activeUser).insElem(string(c), cursor)
+			mainConv.testaPost.Text(activeUser).insSingleElem(c, cursor)
 			cursor++
 
 			fmt.Println("---", mainConv.testaPost.Text(activeUser).GetComplete(true), "---") //DEBUG

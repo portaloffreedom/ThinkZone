@@ -8,7 +8,7 @@ import (
 )
 
 type elemSuperString struct {
-	elemento   string
+	elemento   []rune
 	size       int
 	succ, prec *elemSuperString
 }
@@ -22,7 +22,7 @@ func NewElemSuperString(prec *elemSuperString, succ *elemSuperString) *elemSuper
 
 	elem := new(elemSuperString)
 
-	elem.elemento = ""
+	elem.elemento = []rune{' '}
 	elem.size = 0
 	elem.succ = succ
 	elem.prec = prec
@@ -61,7 +61,7 @@ SuperString::~SuperString()
 
 // Attenzione! non ricalcola la nuova size per una questione di performance
 // @param nuova
-func (elem *elemSuperString) sostituisciStringa(nuova string) {
+func (elem *elemSuperString) sostituisciStringa(nuova []rune) {
 	elem.elemento = nuova
 }
 
@@ -82,11 +82,11 @@ func (lista *SuperString) GetComplete(separators bool) string {
 	tmp = lista.testa
 	for j := 0; j < dim; j++ {
 		if separators == true {
-			elemento[0] = tmp.elemento
+			elemento[0] = string(tmp.elemento)
 			elemento[2] = strconv.Itoa(tmp.size)
 			totalVector[j] = strings.Join(elemento, "")
 		} else {
-			totalVector[j] = tmp.elemento
+			totalVector[j] = string(tmp.elemento)
 		}
 		tmp = tmp.succ
 	}
@@ -95,7 +95,15 @@ func (lista *SuperString) GetComplete(separators bool) string {
 
 }
 
-func (lista *SuperString) insElem(appendStr string, pos int) {
+func (lista *SuperString) insSingleElem(appendRune rune, pos int) {
+	lista.insElem([]rune{appendRune}, pos)
+}
+
+func (lista *SuperString) insStringElem(s string, pos int) {
+	lista.insElem([]rune(s), pos)
+}
+
+func (lista *SuperString) insElem(appendRunes []rune, pos int) {
 
 	if lista.dim == 1 && lista.testa.size == 0 {
 		pos = -1
@@ -105,7 +113,7 @@ func (lista *SuperString) insElem(appendStr string, pos int) {
 		lista.testa = NewElemSuperString(nil, nil)
 	}
 
-	dimStr := len(appendStr)
+	dimStr := len(appendRunes)
 	if dimStr == 0 {
 		return
 	}
@@ -116,7 +124,7 @@ func (lista *SuperString) insElem(appendStr string, pos int) {
 	if pos == 0 {
 		lista.testa = NewElemSuperString(nil, lista.testa)
 		lista.testa.succ.prec = lista.testa
-		lista.testa.elemento = appendStr
+		lista.testa.elemento = appendRunes
 		lista.testa.size = dimStr
 		lista.dim += 1
 
@@ -139,7 +147,8 @@ func (lista *SuperString) insElem(appendStr string, pos int) {
 			coda = coda.succ
 		}
 
-		coda.elemento = strings.Join([]string{coda.elemento, appendStr}, "")
+		//		coda.elemento = strings.Join([]string{coda.elemento, appendStr}, "")
+		coda.elemento = append(coda.elemento, appendRunes...)
 		coda.size += dimStr
 
 		return
@@ -159,14 +168,15 @@ func (lista *SuperString) insElem(appendStr string, pos int) {
 		//split := strings.Fields(posAttuale.elemento)
 
 		vecchio := posAttuale.elemento
-		tmp.sostituisciStringa(vecchio[pos:posAttuale.size])
-		posAttuale.sostituisciStringa(vecchio[0:pos])
+		tmp.sostituisciStringa(vecchio[pos+1 : posAttuale.size]) //TODO rotto
+		posAttuale.sostituisciStringa(vecchio[0 : pos+1])
 
 		tmp.size = posAttuale.size - (pos)
 		posAttuale.size = pos
 	}
 
-	posAttuale.elemento = strings.Join([]string{posAttuale.elemento, appendStr}, "")
+	//	posAttuale.elemento = strings.Join([]string{posAttuale.elemento, appendStr}, "")
+	posAttuale.elemento = append(posAttuale.elemento, appendRunes...)
 	posAttuale.size += dimStr
 
 	return
@@ -182,6 +192,11 @@ func removeFromString(s string, s_size int, pos int, howmany int) string {
 
 	return strings.Join([]string{s[0:pos], s[pos+howmany : s_size]}, "")
 
+}
+
+func removeFromRunes(origin []rune, s_size int, pos int, howmany int) []rune {
+
+	return append(origin[0:pos], origin[pos+howmany:s_size]...)
 }
 
 func (lista *SuperString) delElem(pos int, howmany int) {
@@ -207,13 +222,13 @@ func (lista *SuperString) delElem(pos int, howmany int) {
 			lista.delSingleElem(posAttuale)
 			return
 		}
-		posAttuale.elemento = removeFromString(posAttuale.elemento, posAttuale.size, pos, howmany)
+		posAttuale.elemento = removeFromRunes(posAttuale.elemento, posAttuale.size, pos, howmany)
 		posAttuale.size -= quanti_eliminare
 		return
 	}
 
 	quanti_eliminare = posAttuale.size - pos
-	posAttuale.elemento = removeFromString(posAttuale.elemento, posAttuale.size, pos, quanti_eliminare)
+	posAttuale.elemento = removeFromRunes(posAttuale.elemento, posAttuale.size, pos, quanti_eliminare)
 	posAttuale.size -= quanti_eliminare
 
 	if posAttuale.size == 0 {
@@ -242,7 +257,7 @@ func (lista *SuperString) delElem(pos int, howmany int) {
 	if posAttuale.size == quanti_eliminare {
 		lista.delSingleElem(posAttuale)
 	} else {
-		posAttuale.elemento = removeFromString(posAttuale.elemento, posAttuale.size, 0, quanti_eliminare)
+		posAttuale.elemento = removeFromRunes(posAttuale.elemento, posAttuale.size, 0, quanti_eliminare)
 		posAttuale.size -= quanti_eliminare
 	}
 }
