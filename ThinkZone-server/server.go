@@ -109,7 +109,7 @@ func mangiaIntero(input chan rune) (valore int, lastRead rune) {
 	for i := 0; i < 32; i++ {
 		//		buffer = buffer[i+1]
 		b := <-input
-		fmt.Print(string(b))
+		//		fmt.Print(string(b)) //DEBUG
 		buffer[i] = b
 		switch b {
 		case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0':
@@ -170,10 +170,12 @@ func gestisciTestoConversazione(input chan rune) {
 			mainConv.testaPost.Text(activeUser).insSingleElem(c, cursor)
 			cursor++
 
-			fmt.Println("---", mainConv.testaPost.Text(activeUser).GetComplete(true), "---") //DEBUG
-
 			//TODO anche qui si può pensare ad un flasher a tempo per minimizzare il lavoro su superstring
 		}
+
+		//		fmt.Println("---", mainConv.testaPost.Text(activeUser).GetComplete(true), "---") //DEBUG
+		fmt.Println(mainConv.testaPost.Text(activeUser).GetComplete(true)) //DEBUG
+
 	}
 }
 

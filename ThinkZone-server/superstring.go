@@ -62,7 +62,9 @@ SuperString::~SuperString()
 // Attenzione! non ricalcola la nuova size per una questione di performance
 // @param nuova
 func (elem *elemSuperString) sostituisciStringa(nuova []rune) {
-	elem.elemento = nuova
+	//	elem.elemento = nuova
+	elem.elemento = make([]rune, len(nuova))
+	copy(elem.elemento, nuova)
 }
 
 func (lista *SuperString) GetComplete(separators bool) string {
@@ -196,10 +198,17 @@ func removeFromString(s string, s_size int, pos int, howmany int) string {
 
 func removeFromRunes(origin []rune, s_size int, pos int, howmany int) []rune {
 
-	return append(origin[0:pos], origin[pos+howmany:s_size]...)
+	//	destination := make([]rune, s_size)
+	//	copy(destination[0:pos+1], origin[0:pos+1])
+	//	return append(destination, origin[pos+howmany:s_size]...)
+	copy(origin[pos:], origin[pos+howmany:s_size])
+	origin = origin[:s_size-howmany]
+	return origin
 }
 
 func (lista *SuperString) delElem(pos int, howmany int) {
+	fmt.Println("Cercando di eliminare: pos=", pos, " howmany=", howmany)
+
 	if pos < 0 {
 		fmt.Println("che cazzo stai cercando di eliminare???")
 		return
