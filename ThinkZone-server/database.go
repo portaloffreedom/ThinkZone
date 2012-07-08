@@ -5,36 +5,35 @@ import (
 //"fmt"
 )
 
-type UserStatus struct {
-	id        int
-	connected bool
+type User struct {
+	id       int
+	username string
 }
 
-type databaseConversation struct {
-	UserNameToId map[string]*UserStatus
-	contatore    int
+type databaseRegistration struct {
+	UserNameToId map[string]*User
+	contatore    int //sostituire con lista degli id non usati
 }
 
-var data databaseConversation = databaseConversation{make(map[string]*UserStatus), 0}
+var data databaseRegistration = databaseRegistration{make(map[string]*User), 0}
 
 //this function assign an id to an username
 //return the id assigned
 //return false if the id already existed, true if a new one was assigned
-func (datab *databaseConversation) connectUser(s string) (id int, newuser bool) {
+func (datab *databaseRegistration) connectUser(s string) (id int, newuser bool) {
 	user := datab.UserNameToId[s]
 
 	if user == nil {
 		datab.contatore++
 		user = new(UserStatus)
 		user.id = datab.contatore
-		user.connected = true
 		datab.UserNameToId[s] = user
 		//return id, true
 		newuser = true
 	} else {
 		//return id, false
 		user = testuser
-		if ...//TODO ripensare tutta questa parte...
+		//if ...//TODO ripensare tutta questa parte...
 		newuser = false
 	}
 
@@ -43,7 +42,7 @@ func (datab *databaseConversation) connectUser(s string) (id int, newuser bool) 
 }
 
 //deprecated
-func (datab *databaseConversation) AddUserId(s string) (int, bool) {
+func (datab *databaseRegistration) AddUserId(s string) (int, bool) {
 	id := datab.UserNameToId[s]
 
 	if id == 0 {
@@ -58,7 +57,7 @@ func (datab *databaseConversation) AddUserId(s string) (int, bool) {
 	return 0, false
 }
 
-func (datab *databaseConversation) GetUserId(s string) int {
+func (datab *databaseRegistration) GetUserId(s string) int {
 	id := datab.UserNameToId[s]
 	return id
 }
