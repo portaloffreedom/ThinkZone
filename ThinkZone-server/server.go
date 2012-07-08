@@ -95,7 +95,7 @@ func gestisciClient(conn net.Conn) (*Client, func(chan *Client)) {
 		}
 	}
 }
-func mangiaCarattereDiControllo(c byte, input chan byte) bool {
+func mangiaCarattereDiControllo(c rune, input chan rune) bool {
 	d := <-input
 	if c == d {
 		return true
@@ -104,8 +104,8 @@ func mangiaCarattereDiControllo(c byte, input chan byte) bool {
 	return false
 }
 
-func mangiaIntero(input chan byte) (valore int, lastRead byte) {
-	buffer := make([]byte, 32, 32)
+func mangiaIntero(input chan rune) (valore int, lastRead rune) {
+	buffer := make([]rune, 32, 32)
 	for i := 0; i < 32; i++ {
 		//		buffer = buffer[i+1]
 		b := <-input
@@ -130,7 +130,7 @@ func mangiaIntero(input chan byte) (valore int, lastRead byte) {
 }
 
 //this function should run as goroutine
-func gestisciTestoConversazione(input chan byte) {
+func gestisciTestoConversazione(input chan rune) {
 	activeUser := data.GetUserByID(0)
 	cursor := 0
 	for {
@@ -180,7 +180,7 @@ func gestisciTestoConversazione(input chan byte) {
 func flasher(codaCiclica *list.List, readiness chan *Client) {
 	tempoDaAspettare := 20 * time.Millisecond
 	var lastActiveUser int = -1
-	toSuperString := make(chan byte, 256)
+	toSuperString := make(chan rune, 256)
 
 	go gestisciTestoConversazione(toSuperString)
 
@@ -204,10 +204,10 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 
 			//leggi cosa spedire
 			var daLeggere int = clientAttivo.stream.Reader.Buffered()
-			buffer := make([]byte, chiSonoSSize+daLeggere)
+			buffer := make([]rune, chiSonoSSize+daLeggere)
 			var err error
 			for i := chiSonoSSize; i < chiSonoSSize+daLeggere; i++ {
-				buffer[i], err = clientAttivo.stream.ReadByte()
+				buffer[i], _, err = clientAttivo.stream.ReadRune()
 				toSuperString <- buffer[i]
 				if err != nil {
 					//TODO gestisci errore
@@ -220,13 +220,13 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 
 			//prepara il buffer da spedire
 			for i := 0; i < chiSonoSSize; i++ {
-				buffer[i] = []byte(chiSonoString)[i]
+				buffer[i] = []rune(chiSonoString)[i]
 			}
 
 			//spedisci
 			for e := codaCiclica.Front(); e != nil; e = e.Next() {
 				client := e.Value.(*Client)
-				client.stream.Write(buffer)
+				client.stream.WriteString(string(buffer))
 				client.stream.Flush()
 			}
 		}

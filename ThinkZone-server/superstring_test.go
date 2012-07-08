@@ -54,16 +54,16 @@ func TestSuperString(test *testing.T) {
 	testEqual("99", "99[2]")
 
 	//#3
-	prova.insElem("11!", 0)
-	testEqual("11!99", "11![3]99[2]")
+	prova.insElem("12!", 0)
+	testEqual("12!99", "12![3]99[2]")
 
 	//#4
 	prova.insElem("###", 3)
-	testEqual("11!###99", "11!###[6]99[2]")
+	testEqual("12!###99", "12!###[6]99[2]")
 
 	//#5
 	prova.insElem("tro", 2)
-	testEqual("11tro!###99", "11tro[5]!###[4]99[2]")
+	testEqual("12tro!###99", "12tro[5]!###[4]99[2]")
 
 	//#6 ----delete----
 	prova.delElem(1, 1)
@@ -71,18 +71,18 @@ func TestSuperString(test *testing.T) {
 
 	//#7
 	prova.delElem(4, 1)
-	testEqual("1tr!###99", "1tr[3]!###[4]99[2]")
+	testEqual("1tro###99", "1tro[4]###[3]99[2]")
 
 	//#8
-	prova.delElem(5, 3)
-	testEqual("1tr!99", "1tr[3]![1]99[2]")
+	prova.delElem(4, 3)
+	testEqual("1tro99", "1tro[4]99[2]")
 
 	//#9
-	prova.delElem(4, 1)
+	prova.delElem(3, 1)
 	testEqual("1tr99", "1tr[3]99[2]")
 
 	//#10
-	prova.delElem(1, 3)
+	prova.delElem(0, 3)
 	testEqual("99", "99[2]")
 
 	//#11
@@ -92,7 +92,7 @@ func TestSuperString(test *testing.T) {
 	testEqual("porco Dio Zoccolo99", "porco [6]Dio [4]Zoccolo[7]99[2]")
 
 	//#12
-	prova.delElem(4, 15)
+	prova.delElem(3, 15)
 	testEqual("por9", "por[3]9[1]")
 
 	fmt.Println()
