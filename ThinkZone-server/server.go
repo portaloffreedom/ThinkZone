@@ -15,12 +15,12 @@ import (
 )
 
 type Client struct {
-	conn     *net.Conn
-	stream   *bufio.ReadWriter
-	blocco   chan int
-	username string
-	userid   int
-	user     *User
+	conn   *net.Conn
+	stream *bufio.ReadWriter
+	blocco chan int
+	user   *User
+	//	username string //duplicated value
+	//  userid   int //duplicated value
 }
 
 var serverFakeUser User = User{42, "server"}
@@ -41,15 +41,16 @@ func NewClient(conn *net.Conn) *Client {
 		fmt.Print("ERRORE NEL LEGGERE LO USERNAME DI: ")
 		fmt.Println((*conn).RemoteAddr())
 	}
-	client.username = strings.Trim(s, "\\")
+	username := strings.Trim(s, "\\")
 	var newuser bool
-	client.user, newuser = data.ConnectUser(client.username)
+	client.user, newuser = data.ConnectUser(username)
+	mainConv.NewUserConnection(client.user)
 	if !newuser {
 		fmt.Println("impossibile connettere di nuovo lo stesso userid")
 		return nil
 	}
 
-	client.stream.WriteString(strconv.Itoa(client.userid))
+	client.stream.WriteString(strconv.Itoa(client.user.id))
 	client.stream.WriteRune('\\')
 	client.stream.Flush()
 
@@ -105,7 +106,7 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 	//		time.Sleep(20 * time.Millisecond)
 	//	}
 	tempoDaAspettare := 20 * time.Millisecond
-	var lastActiveUser int = 0
+	var lastActiveUser int = -1
 
 	for {
 		start := time.Now()
@@ -116,9 +117,9 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 			clientAttivo := <-readiness
 			var chiSonoString string
 
-			if lastActiveUser != clientAttivo.userid {
-				chiSonoString = strings.Join([]string{"\\U", strconv.Itoa(clientAttivo.userid), "\\"}, "")
-				lastActiveUser = clientAttivo.userid
+			if lastActiveUser != clientAttivo.user.id {
+				chiSonoString = strings.Join([]string{"\\U", strconv.Itoa(clientAttivo.user.id), "\\"}, "")
+				lastActiveUser = clientAttivo.user.id
 			} else {
 				chiSonoString = ""
 			}

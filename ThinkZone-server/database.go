@@ -22,9 +22,10 @@ var data databaseRegistration = databaseRegistration{make(map[string]*User), 0}
 //return false if the id already existed, true if a new one was assigned
 //TODO sostituire questa funzione con 2 diverse: login e createUser
 func (datab *databaseRegistration) ConnectUser(s string) (user *User, newuser bool) {
-	user = datab.UserNameToId[s]
+	//user = datab.UserNameToId[s]
+	var present bool
 
-	if user == nil {
+	if user, present = datab.UserNameToId[s]; !present {
 		datab.contatore++
 		user = new(User)
 		user.id = datab.contatore

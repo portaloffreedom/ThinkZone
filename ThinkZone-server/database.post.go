@@ -107,6 +107,10 @@ func (conv *Conversation) NewUserConnection(user *User) *ConversationError {
 
 }
 
+func (conv *Conversation) UserDisconnection(user *User) {
+	delete(conv.connected, user.id)
+}
+
 //create a post in response of the given post
 func (conv *Conversation) ResponseToPost(idPost int, user *User) *Post {
 	padre := conv.postMap[idPost]
