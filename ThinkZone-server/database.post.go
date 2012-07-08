@@ -84,6 +84,11 @@ func (post *Post) addWriter(writer *User) bool {
 func NewConversation(creator *User) *Conversation {
 	conv := new(Conversation)
 
+	//connected     map[int]*User
+	//postMap       map[int]*Post
+	conv.connected = make(map[int]*User)
+	conv.postMap = make(map[int]*Post)
+
 	conv.contatorePost = 1
 	conv.connected[creator.id] = creator
 	conv.testaPost = conv.NewPost(creator, nil)
