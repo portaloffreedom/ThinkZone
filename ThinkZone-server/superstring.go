@@ -201,8 +201,15 @@ func removeFromRunes(origin []rune, s_size int, pos int, howmany int) []rune {
 	//	destination := make([]rune, s_size)
 	//	copy(destination[0:pos+1], origin[0:pos+1])
 	//	return append(destination, origin[pos+howmany:s_size]...)
-	copy(origin[pos:], origin[pos+howmany:s_size])
-	origin = origin[:s_size-howmany]
+
+	if pos+howmany+1 < s_size {
+		copy(origin[pos+1:], origin[pos+howmany+1:s_size+1])
+		//		origin = origin[:pos+1]
+		//		origin = append(origin, origin[pos+howmany+1:s_size+1]...)
+		fmt.Println("divisione stringa:", string(origin[:pos+1]), ":", string(origin[pos+howmany+1:s_size+1]))
+	}
+
+	origin = origin[:s_size-howmany+1]
 	return origin
 }
 

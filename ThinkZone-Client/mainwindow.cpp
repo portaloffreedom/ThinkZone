@@ -46,7 +46,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QGridLayout *layout = new QGridLayout;
     layout->addWidget(&input, 0, 0, Qt::AlignCenter);
-    layout->addWidget(&output, 1, 0, Qt::AlignCenter);
+    //layout->addWidget(&output, 1, 0, Qt::AlignCenter);
 
     this->setLayout(layout);
     this->setWindowTitle("ThinkZone");

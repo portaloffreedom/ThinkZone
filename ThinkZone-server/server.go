@@ -19,17 +19,19 @@ type Client struct {
 	stream *bufio.ReadWriter
 	blocco chan int
 	user   *User
+
 	//	username string //duplicated value
 	//  userid   int //duplicated value
 }
 
 var serverFakeUser User = User{42, "server"}
 var mainConv *Conversation /*{	"prova",
-1,
-connected     map[int]*User
-postMap       map[int]*Post
-contatorePost int
-testaPost     *Post	 }*/
+ * 1,
+ * connected     map[int]*User
+ * postMap       map[int]*Post
+ * contatorePost int
+ * testaPost     *Post	 }
+ */
 
 func NewClient(conn *net.Conn) *Client {
 	var client *Client = new(Client)
