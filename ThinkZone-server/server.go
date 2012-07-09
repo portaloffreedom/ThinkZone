@@ -107,7 +107,7 @@ func mangiaCarattereDiControllo(c rune, input chan rune) bool {
 }
 
 func mangiaIntero(input chan rune) (valore int, lastRead rune) {
-	buffer := make([]rune, 32, 32)
+	buffer := make([]rune, 256, 256)
 	for i := 0; i < 32; i++ {
 		//		buffer = buffer[i+1]
 		b := <-input
