@@ -163,6 +163,7 @@ func gestisciTestoConversazione(input chan rune) {
 
 			case '\\':
 				mainConv.testaPost.Text(activeUser).insSingleElem('\\', cursor)
+				cursor++
 
 			default:
 				fmt.Println("ERRORE azione", cc, "non disponibile")
