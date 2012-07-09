@@ -22,7 +22,8 @@ func NewElemSuperString(prec *elemSuperString, succ *elemSuperString) *elemSuper
 
 	elem := new(elemSuperString)
 
-	elem.elemento = []rune{' '}
+	elem.elemento = make([]rune, 8, 8)
+	elem.elemento = elem.elemento[0:0]
 	elem.size = 0
 	elem.succ = succ
 	elem.prec = prec
@@ -63,7 +64,7 @@ SuperString::~SuperString()
 // @param nuova
 func (elem *elemSuperString) sostituisciStringa(nuova []rune) {
 	//	elem.elemento = nuova
-	elem.elemento = make([]rune, cap(nuova))
+	elem.elemento = make([]rune, len(nuova))
 	copy(elem.elemento, nuova)
 }
 
@@ -170,11 +171,11 @@ func (lista *SuperString) insElem(appendRunes []rune, pos int) {
 		//split := strings.Fields(posAttuale.elemento)
 
 		vecchio := posAttuale.elemento
-		tmp.sostituisciStringa(vecchio[pos+1 : posAttuale.size+1]) //TODO rotto
-		posAttuale.sostituisciStringa(vecchio[0 : pos+1])
+		tmp.sostituisciStringa(vecchio[pos:posAttuale.size]) //TODO rotto
+		posAttuale.sostituisciStringa(vecchio[0:pos])
 
-		tmp.size = posAttuale.size - (pos + 1)
-		posAttuale.size = pos + 1
+		tmp.size = posAttuale.size - (pos)
+		posAttuale.size = pos
 	}
 
 	//	posAttuale.elemento = strings.Join([]string{posAttuale.elemento, appendStr}, "")
@@ -207,14 +208,14 @@ func removeFromRunes(origin []rune, s_size int, pos int, howmany int) []rune {
 
 	if pos+howmany < s_size {
 		parteDaEliminare := origin[pos:]
-		secondPart := origin[pos+howmany : s_size+1]
+		secondPart := origin[pos+howmany : s_size]
 		//		fmt.Println("divisione stringa:", string(firstPart), ":", string(secondPart)) //DEBUG
 		copy(parteDaEliminare, secondPart)
 		//		origin = origin[:pos+1]
 		//		origin = append(origin, origin[pos+howmany+1:s_size+1]...)
 	}
 
-	origin = origin[:s_size-howmany+1]
+	origin = origin[:s_size-howmany]
 	return origin
 }
 

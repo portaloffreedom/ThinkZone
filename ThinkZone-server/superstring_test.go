@@ -8,7 +8,7 @@ import (
 )
 
 func errore(test *testing.T, s string) {
-	fmt.Println("######Errore:", s)
+	fmt.Printf("######Errore:|%v|\n", s)
 	test.Fail()
 }
 
@@ -105,9 +105,11 @@ func TestSuperString2(test *testing.T) {
 	//#1
 	testEqual("", "[0]")
 
+	//#2
 	prova.insStringElem("Australopitecus---", 0)
 	testEqual("Australopitecus---", "Australopitecus---[18]")
 
+	//#3
 	prova.insStringElem("0", 16)
 	testEqual("Australopitecus-0--", "Australopitecus-0[17]--[2]")
 
