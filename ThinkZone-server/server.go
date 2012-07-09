@@ -119,7 +119,7 @@ func mangiaIntero(input chan rune) (valore int, lastRead rune) {
 			lastRead = buffer[i]
 			buffer = buffer[:i]
 
-			valore64, err := strconv.ParseInt(string(buffer), 10, 8)
+			valore64, err := strconv.ParseInt(string(buffer), 10, 0)
 			if err != nil {
 				fmt.Println("ERRORE nel convertire string in int")
 			}
