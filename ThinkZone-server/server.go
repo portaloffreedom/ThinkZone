@@ -2,6 +2,7 @@
 package main
 
 import (
+	//	"ThinkZoneDatabase"
 	"bufio"
 	"container/list"
 	"fmt"
@@ -14,12 +15,23 @@ import (
 )
 
 type Client struct {
-	conn     *net.Conn
-	stream   *bufio.ReadWriter
-	blocco   chan int
-	username string
-	userid   int
+	conn   *net.Conn
+	stream *bufio.ReadWriter
+	blocco chan int
+	user   *User
+
+	//	username string //duplicated value
+	//  userid   int //duplicated value
 }
+
+var serverFakeUser User = User{42, "server"}
+var mainConv *Conversation /*{	"prova",
+ * 1,
+ * connected     map[int]*User
+ * postMap       map[int]*Post
+ * contatorePost int
+ * testaPost     *Post	 }
+ */
 
 func NewClient(conn *net.Conn) *Client {
 	var client *Client = new(Client)
@@ -31,15 +43,16 @@ func NewClient(conn *net.Conn) *Client {
 		fmt.Print("ERRORE NEL LEGGERE LO USERNAME DI: ")
 		fmt.Println((*conn).RemoteAddr())
 	}
-	client.username = strings.Trim(s, "\\")
-	var exists bool
-	client.userid, exists = AddUserId(client.username)
-	if !exists {
+	username := strings.Trim(s, "\\")
+	var newuser bool
+	client.user, newuser = data.ConnectUser(username)
+	mainConv.NewUserConnection(client.user)
+	if !newuser {
 		fmt.Println("impossibile connettere di nuovo lo stesso userid")
 		return nil
 	}
 
-	client.stream.WriteString(strconv.Itoa(client.userid))
+	client.stream.WriteString(strconv.Itoa(client.user.id))
 	client.stream.WriteRune('\\')
 	client.stream.Flush()
 
@@ -84,18 +97,96 @@ func gestisciClient(conn net.Conn) (*Client, func(chan *Client)) {
 		}
 	}
 }
+func mangiaCarattereDiControllo(c rune, input chan rune) bool {
+	d := <-input
+	if c == d {
+		return true
+	}
+	//else
+	return false
+}
+
+func mangiaIntero(input chan rune) (valore int, lastRead rune) {
+	buffer := make([]rune, 32, 32)
+	for i := 0; i < 32; i++ {
+		//		buffer = buffer[i+1]
+		b := <-input
+		//		fmt.Print(string(b)) //DEBUG
+		buffer[i] = b
+		switch b {
+		case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0':
+		default:
+			lastRead = buffer[i]
+			buffer = buffer[:i]
+
+			valore64, err := strconv.ParseInt(string(buffer), 10, 8)
+			if err != nil {
+				fmt.Println("ERRORE nel convertire string in int")
+			}
+			valore = int(valore64)
+			return
+		}
+	}
+
+	return -1, 0
+}
+
+//this function should run as goroutine
+func gestisciTestoConversazione(input chan rune) {
+	activeUser := data.GetUserByID(0)
+	cursor := 0
+	for {
+		c := <-input
+		switch c {
+		case '\\': //caso di carattere di controllo
+			cc := <-input
+			switch cc {
+			case 'P':
+				cursor, cc = mangiaIntero(input)
+				if cc != '\\' {
+					fmt.Println("ERRORE lettura stream: carattere di controllo mangiato non Intero")
+				}
+			case 'D':
+				howmany, ccc := mangiaIntero(input)
+				if ccc != '\\' {
+					fmt.Println("ERRORE lettura stream: carattere di controllo mangiato non Intero")
+				}
+				cursor -= howmany
+				//TODO rimuovi testo
+				mainConv.testaPost.Text(activeUser).delElem(cursor, howmany)
+			case 'U':
+				newUserID, ccc := mangiaIntero(input)
+				if ccc != '\\' {
+					fmt.Println("ERRORE lettura stream: carattere di controllo mangiato non Intero")
+				}
+				activeUser = data.GetUserByID(newUserID)
+
+			case '\\':
+				mainConv.testaPost.Text(activeUser).insSingleElem('\\', cursor)
+
+			default:
+				fmt.Println("ERRORE azione", cc, "non disponibile")
+			}
+
+		default:
+			mainConv.testaPost.Text(activeUser).insSingleElem(c, cursor)
+			cursor++
+
+			//TODO anche qui si può pensare ad un flasher a tempo per minimizzare il lavoro su superstring
+		}
+
+		//		fmt.Println("---", mainConv.testaPost.Text(activeUser).GetComplete(true), "---") //DEBUG
+		fmt.Println(mainConv.testaPost.Text(activeUser).GetComplete(true)) //DEBUG
+
+	}
+}
 
 func flasher(codaCiclica *list.List, readiness chan *Client) {
-	//TODO invece di fare un flush disordinato, raccogli le comunicazioni dello stesso client in un unico swap di utente che scrive...
-	//	for {
-	//		for e := codaCiclica.Front(); e != nil; e = e.Next() {
-	//			client := e.Value.(*bufio.Writer)
-	//			client.Flush()
-	//		}
-	//		time.Sleep(20 * time.Millisecond)
-	//	}
 	tempoDaAspettare := 20 * time.Millisecond
-	var lastActiveUser int = 0
+	var lastActiveUser int = -1
+	toSuperString := make(chan rune, 256)
+
+	go gestisciTestoConversazione(toSuperString)
 
 	for {
 		start := time.Now()
@@ -106,9 +197,9 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 			clientAttivo := <-readiness
 			var chiSonoString string
 
-			if lastActiveUser != clientAttivo.userid {
-				chiSonoString = strings.Join([]string{"\\U", strconv.Itoa(clientAttivo.userid), "\\"}, "")
-				lastActiveUser = clientAttivo.userid
+			if lastActiveUser != clientAttivo.user.id {
+				chiSonoString = strings.Join([]string{"\\U", strconv.Itoa(clientAttivo.user.id), "\\"}, "")
+				lastActiveUser = clientAttivo.user.id
 			} else {
 				chiSonoString = ""
 			}
@@ -117,10 +208,11 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 
 			//leggi cosa spedire
 			var daLeggere int = clientAttivo.stream.Reader.Buffered()
-			buffer := make([]byte, chiSonoSSize+daLeggere)
+			buffer := make([]rune, chiSonoSSize+daLeggere)
 			var err error
 			for i := chiSonoSSize; i < chiSonoSSize+daLeggere; i++ {
-				buffer[i], err = clientAttivo.stream.ReadByte()
+				buffer[i], _, err = clientAttivo.stream.ReadRune()
+				toSuperString <- buffer[i]
 				if err != nil {
 					//TODO gestisci errore
 					fmt.Println("Errore nel leggere dalla rete")
@@ -132,13 +224,13 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 
 			//prepara il buffer da spedire
 			for i := 0; i < chiSonoSSize; i++ {
-				buffer[i] = []byte(chiSonoString)[i]
+				buffer[i] = []rune(chiSonoString)[i]
 			}
 
 			//spedisci
 			for e := codaCiclica.Front(); e != nil; e = e.Next() {
 				client := e.Value.(*Client)
-				client.stream.Write(buffer)
+				client.stream.WriteString(string(buffer))
 				client.stream.Flush()
 			}
 		}
@@ -162,12 +254,14 @@ func spedisci(codaNewConn chan *Client, readiness chan *Client) {
 	}
 }
 
-func StarServer(laddr string) {
+func StartServer(laddr string) {
 	ln, err := net.Listen("tcp", laddr)
 	if err != nil {
 		fmt.Println("Errore nell'aprire la connessione")
 		//TODO handle error
 	}
+
+	mainConv = NewConversation(&serverFakeUser)
 
 	//canale := make(chan byte, 256)
 	codaReadiness := make(chan *Client, 64)

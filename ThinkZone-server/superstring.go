@@ -8,7 +8,7 @@ import (
 )
 
 type elemSuperString struct {
-	elemento   string
+	elemento   []rune
 	size       int
 	succ, prec *elemSuperString
 }
@@ -22,7 +22,8 @@ func NewElemSuperString(prec *elemSuperString, succ *elemSuperString) *elemSuper
 
 	elem := new(elemSuperString)
 
-	elem.elemento = ""
+	elem.elemento = make([]rune, 8, 8)
+	elem.elemento = elem.elemento[0:0]
 	elem.size = 0
 	elem.succ = succ
 	elem.prec = prec
@@ -61,8 +62,10 @@ SuperString::~SuperString()
 
 // Attenzione! non ricalcola la nuova size per una questione di performance
 // @param nuova
-func (elem *elemSuperString) sostituisciStringa(nuova string) {
-	elem.elemento = nuova
+func (elem *elemSuperString) sostituisciStringa(nuova []rune) {
+	//	elem.elemento = nuova
+	elem.elemento = make([]rune, len(nuova))
+	copy(elem.elemento, nuova)
 }
 
 func (lista *SuperString) GetComplete(separators bool) string {
@@ -82,11 +85,11 @@ func (lista *SuperString) GetComplete(separators bool) string {
 	tmp = lista.testa
 	for j := 0; j < dim; j++ {
 		if separators == true {
-			elemento[0] = tmp.elemento
+			elemento[0] = string(tmp.elemento)
 			elemento[2] = strconv.Itoa(tmp.size)
 			totalVector[j] = strings.Join(elemento, "")
 		} else {
-			totalVector[j] = tmp.elemento
+			totalVector[j] = string(tmp.elemento)
 		}
 		tmp = tmp.succ
 	}
@@ -95,13 +98,25 @@ func (lista *SuperString) GetComplete(separators bool) string {
 
 }
 
-func (lista *SuperString) insElem(appendStr string, pos int) {
+func (lista *SuperString) insSingleElem(appendRune rune, pos int) {
+	lista.insElem([]rune{appendRune}, pos)
+}
+
+func (lista *SuperString) insStringElem(s string, pos int) {
+	lista.insElem([]rune(s), pos)
+}
+
+func (lista *SuperString) insElem(appendRunes []rune, pos int) {
+
+	if lista.dim == 1 && lista.testa.size == 0 {
+		pos = -1
+	}
 
 	if lista.testa == nil {
 		lista.testa = NewElemSuperString(nil, nil)
 	}
 
-	dimStr := len(appendStr)
+	dimStr := len(appendRunes)
 	if dimStr == 0 {
 		return
 	}
@@ -112,7 +127,7 @@ func (lista *SuperString) insElem(appendStr string, pos int) {
 	if pos == 0 {
 		lista.testa = NewElemSuperString(nil, lista.testa)
 		lista.testa.succ.prec = lista.testa
-		lista.testa.elemento = appendStr
+		lista.testa.elemento = appendRunes
 		lista.testa.size = dimStr
 		lista.dim += 1
 
@@ -120,10 +135,10 @@ func (lista *SuperString) insElem(appendStr string, pos int) {
 	}
 
 	posAttuale := lista.testa
-	cont := 0
+	//	cont := 0
 
 	for posAttuale != nil && pos >= posAttuale.size {
-		cont++
+		//		cont++
 		pos -= posAttuale.size
 		posAttuale = posAttuale.succ
 	}
@@ -135,7 +150,8 @@ func (lista *SuperString) insElem(appendStr string, pos int) {
 			coda = coda.succ
 		}
 
-		coda.elemento = strings.Join([]string{coda.elemento, appendStr}, "")
+		//		coda.elemento = strings.Join([]string{coda.elemento, appendStr}, "")
+		coda.elemento = append(coda.elemento, appendRunes...)
 		coda.size += dimStr
 
 		return
@@ -146,21 +162,24 @@ func (lista *SuperString) insElem(appendStr string, pos int) {
 	} else {
 		//fmt.Println("SuperString: scindo due strighe")
 		tmp := NewElemSuperString(posAttuale, posAttuale.succ)
-		posAttuale.succ.prec = tmp
+		if posAttuale.succ != nil {
+			posAttuale.succ.prec = tmp
+		}
 		posAttuale.succ = tmp
 		lista.dim += 1
 
 		//split := strings.Fields(posAttuale.elemento)
 
 		vecchio := posAttuale.elemento
-		tmp.sostituisciStringa(vecchio[pos:posAttuale.size])
+		tmp.sostituisciStringa(vecchio[pos:posAttuale.size]) //TODO rotto
 		posAttuale.sostituisciStringa(vecchio[0:pos])
 
 		tmp.size = posAttuale.size - (pos)
 		posAttuale.size = pos
 	}
 
-	posAttuale.elemento = strings.Join([]string{posAttuale.elemento, appendStr}, "")
+	//	posAttuale.elemento = strings.Join([]string{posAttuale.elemento, appendStr}, "")
+	posAttuale.elemento = append(posAttuale.elemento, appendRunes...)
 	posAttuale.size += dimStr
 
 	return
@@ -178,18 +197,39 @@ func removeFromString(s string, s_size int, pos int, howmany int) string {
 
 }
 
+func removeFromRunes(origin []rune, s_size int, pos int, howmany int) []rune {
+	//PER STAMPARE DEBUG
+	//	var firstPart []rune
+	//	if pos != 0 {  
+	//		firstPart = origin[:pos]
+	//	} else {
+	//		firstPart = []rune{}
+	//	}
+
+	if pos+howmany < s_size {
+		parteDaEliminare := origin[pos:]
+		secondPart := origin[pos+howmany : s_size]
+		//		fmt.Println("divisione stringa:", string(firstPart), ":", string(secondPart)) //DEBUG
+		copy(parteDaEliminare, secondPart)
+		//		origin = origin[:pos+1]
+		//		origin = append(origin, origin[pos+howmany+1:s_size+1]...)
+	}
+
+	origin = origin[:s_size-howmany]
+	return origin
+}
+
 func (lista *SuperString) delElem(pos int, howmany int) {
-	pos--
+	fmt.Println("Cercando di eliminare: pos=", pos, " howmany=", howmany)
 	if pos < 0 {
 		fmt.Println("che cazzo stai cercando di eliminare???")
 		return
 	}
-
 	//roRebuildTotal = true
 
 	posAttuale := lista.testa
 
-	for pos >= posAttuale.size {
+	for pos > posAttuale.size {
 		pos -= posAttuale.size
 		posAttuale = posAttuale.succ
 	}
@@ -197,18 +237,20 @@ func (lista *SuperString) delElem(pos int, howmany int) {
 	//elimina prima stringa
 	quanti_eliminare := howmany
 	if pos+howmany <= posAttuale.size { //elimina solo posizione attuale
+		fmt.Println("Elimina solo posizione attuale") //DEBUG
 		//vecchio := posAttuale.elemento
 		//posAttuale.elemento = strings.Join([]string{vecchio[0:pos], vecchio[pos+howmany : posAttuale.size]}, "") //remove dalla stringa corrente
-		posAttuale.elemento = removeFromString(posAttuale.elemento, posAttuale.size, pos, howmany)
-		posAttuale.size -= quanti_eliminare
-		if posAttuale.size == 0 {
+		if (posAttuale.size - quanti_eliminare) == 0 {
 			lista.delSingleElem(posAttuale)
+			return
 		}
+		posAttuale.elemento = removeFromRunes(posAttuale.elemento, posAttuale.size, pos, howmany)
+		posAttuale.size -= quanti_eliminare
 		return
 	}
 
 	quanti_eliminare = posAttuale.size - pos
-	posAttuale.elemento = removeFromString(posAttuale.elemento, posAttuale.size, pos, quanti_eliminare)
+	posAttuale.elemento = removeFromRunes(posAttuale.elemento, posAttuale.size, pos, quanti_eliminare)
 	posAttuale.size -= quanti_eliminare
 
 	if posAttuale.size == 0 {
@@ -226,6 +268,7 @@ func (lista *SuperString) delElem(pos int, howmany int) {
 	quanti_eliminare = howmany - quanti_eliminare
 
 	for posAttuale.succ != nil && quanti_eliminare >= posAttuale.size {
+		fmt.Println("Elimino stringa di mezzo") //DEBUG
 		quanti_eliminare -= posAttuale.size
 
 		tmp := posAttuale.succ
@@ -237,9 +280,109 @@ func (lista *SuperString) delElem(pos int, howmany int) {
 	if posAttuale.size == quanti_eliminare {
 		lista.delSingleElem(posAttuale)
 	} else {
-		posAttuale.elemento = removeFromString(posAttuale.elemento, posAttuale.size, 0, quanti_eliminare)
+		fmt.Println("Elimino da ultima stringa") //DEBUG
+		posAttuale.elemento = removeFromRunes(posAttuale.elemento, posAttuale.size, 0, quanti_eliminare)
 		posAttuale.size -= quanti_eliminare
 	}
+}
+
+//DEPRECATED
+func (lista *SuperString) delElemOLD(pos int, howmany int) {
+	fmt.Println("Cercando di eliminare: pos=", pos, " howmany=", howmany)
+
+	if pos < 0 {
+		fmt.Println("che cazzo stai cercando di eliminare???")
+		return
+	}
+	//roRebuildTotal = true
+
+	posAttuale := lista.testa
+
+	for pos >= posAttuale.size {
+		pos -= posAttuale.size
+		posAttuale = posAttuale.succ
+	}
+
+	//elimina prima stringa
+	quanti_eliminare := howmany
+	if pos+howmany <= posAttuale.size { //elimina solo posizione attuale
+		fmt.Println("Elimina solo posizione attuale") //DEBUG
+		//vecchio := posAttuale.elemento
+		//posAttuale.elemento = strings.Join([]string{vecchio[0:pos], vecchio[pos+howmany : posAttuale.size]}, "") //remove dalla stringa corrente
+		if (posAttuale.size - quanti_eliminare) == 0 {
+			lista.delSingleElem(posAttuale)
+			return
+		}
+		posAttuale.elemento = removeFromRunesOLD(posAttuale.elemento, posAttuale.size, pos, howmany)
+		posAttuale.size -= quanti_eliminare
+		return
+	}
+
+	quanti_eliminare = posAttuale.size - pos
+	posAttuale.elemento = removeFromRunesOLD(posAttuale.elemento, posAttuale.size, pos, quanti_eliminare)
+	posAttuale.size -= quanti_eliminare
+
+	if posAttuale.size == 0 {
+		tmp := posAttuale.succ
+		lista.delSingleElem(posAttuale)
+		posAttuale = tmp
+		if posAttuale == nil {
+			posAttuale = lista.testa
+		}
+	} else {
+		posAttuale = posAttuale.succ
+	}
+
+	//elimina le stringhe di mezzo
+	quanti_eliminare = howmany - quanti_eliminare
+
+	for posAttuale.succ != nil && quanti_eliminare >= posAttuale.size {
+		fmt.Println("Elimino stringa di mezzo") //DEBUG
+		quanti_eliminare -= posAttuale.size
+
+		tmp := posAttuale.succ
+		lista.delSingleElem(posAttuale)
+		posAttuale = tmp
+	}
+
+	//elimina ultima stringa
+	if posAttuale.size == quanti_eliminare {
+		lista.delSingleElem(posAttuale)
+	} else {
+		fmt.Println("Elimino da ultima stringa") //DEBUG
+		posAttuale.elemento = removeFromRunesOLD(posAttuale.elemento, posAttuale.size, 0, quanti_eliminare)
+		posAttuale.size -= quanti_eliminare
+	}
+}
+
+func removeFromRunesOLD(origin []rune, s_size int, pos int, howmany int) []rune {
+
+	//	destination := make([]rune, s_size)
+	//	copy(destination[0:pos+1], origin[0:pos+1])
+	//	return append(destination, origin[pos+howmany:s_size]...)
+
+	var parteDaEliminare, secondPart []rune
+
+	//PER STAMPARE DEBUG
+	//	var firstPart []rune
+	//	if pos != 0 {  
+	//		firstPart = origin[:pos+1]
+	//	} else {
+	//		firstPart = []rune{}
+	//	}
+
+	parteDaEliminare = origin[pos+1:]
+
+	if pos+howmany+1 < s_size {
+		secondPart = origin[pos+howmany+1 : s_size+1]
+		//		fmt.Println("divisione stringa:", string(firstPart), ":", string(secondPart)) //DEBUG
+		copy(parteDaEliminare, secondPart)
+		//		origin = origin[:pos+1]
+		//		origin = append(origin, origin[pos+howmany+1:s_size+1]...)
+	}
+
+	origin = origin[:s_size-howmany+1]
+	return origin
 }
 
 /*
