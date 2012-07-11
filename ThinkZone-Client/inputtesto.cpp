@@ -68,10 +68,11 @@ void inputTesto::testoCambiato_Slot(int position, int charsRemoved, int charsAdd
 
 void inputTesto::aggiungiTesto(int position, QString *addString)
 {
-    this->setSincTCP(false);
     cerr<<"pos,add:"<<position<<":"<<addString->toStdString()<<endl;
 
     this->testoSorgente->insElem(addString,position);
+
+    this->setSincTCP(false);
     this->textUpdate();
     this->setSincTCP(true);
 }

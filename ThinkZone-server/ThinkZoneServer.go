@@ -3,6 +3,7 @@ package main
 
 import (
 	"fmt"
+	"thinkzone/network"
 
 	//	"database/sql"	
 	//	_ "github.com/jbarham/gopgsqldriver"
@@ -12,7 +13,8 @@ import (
 func main() {
 	fmt.Println("Hello## World!")
 
-	StartServer(":4242")
+	network.StartServer(":4242")
+	//	StartServer(":80")
 
 	//lingua := NewSuperString()
 	//fmt.Println(lingua.GetCompleteWithSeparators("]["))

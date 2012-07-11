@@ -1,5 +1,5 @@
 // database.post
-package main
+package database
 
 import (
 	//	"fmt"
@@ -19,12 +19,12 @@ func NewConversationError(errExplanation string, conv *Conversation) *Conversati
 }
 
 func (err *ConversationError) Error() string {
-	return "Errore nella conversazione: " + err.conv.title + "\n" + err.errExplanation
+	return "Errore nella conversazione: " + err.conv.Title + "\n" + err.errExplanation
 }
 
 type Conversation struct {
-	title            string
-	id_conversazione int
+	Title            string
+	ID_conversazione int
 
 	//totale_numero_post int
 	//privata	         bool
@@ -32,7 +32,7 @@ type Conversation struct {
 	connected     map[int]*User
 	postMap       map[int]*Post
 	contatorePost int
-	testaPost     *Post
+	TestaPost     *Post
 }
 
 type Post struct {
@@ -90,25 +90,25 @@ func NewConversation(creator *User) *Conversation {
 	conv.postMap = make(map[int]*Post)
 
 	conv.contatorePost = 1
-	conv.connected[creator.id] = creator
-	conv.testaPost = conv.NewPost(creator, nil)
+	conv.connected[creator.ID] = creator
+	conv.TestaPost = conv.NewPost(creator, nil)
 
 	return conv
 }
 
 func (conv *Conversation) NewUserConnection(user *User) *ConversationError {
 
-	if conv.connected[user.id] != nil {
-		return NewConversationError("L'utente "+user.username+" è già connesso", conv)
+	if conv.connected[user.ID] != nil {
+		return NewConversationError("L'utente "+user.Username+" è già connesso", conv)
 	}
 
-	conv.connected[user.id] = user
+	conv.connected[user.ID] = user
 	return nil
 
 }
 
 func (conv *Conversation) UserDisconnection(user *User) {
-	delete(conv.connected, user.id)
+	delete(conv.connected, user.ID)
 }
 
 //create a post in response of the given post
