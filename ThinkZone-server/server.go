@@ -107,7 +107,7 @@ func mangiaCarattereDiControllo(c rune, input chan rune) bool {
 }
 
 func mangiaIntero(input chan rune) (valore int, lastRead rune) {
-	buffer := make([]rune, 32, 32)
+	buffer := make([]rune, 256, 256)
 	for i := 0; i < 32; i++ {
 		//		buffer = buffer[i+1]
 		b := <-input
@@ -119,7 +119,7 @@ func mangiaIntero(input chan rune) (valore int, lastRead rune) {
 			lastRead = buffer[i]
 			buffer = buffer[:i]
 
-			valore64, err := strconv.ParseInt(string(buffer), 10, 8)
+			valore64, err := strconv.ParseInt(string(buffer), 10, 0)
 			if err != nil {
 				fmt.Println("ERRORE nel convertire string in int")
 			}
@@ -163,6 +163,7 @@ func gestisciTestoConversazione(input chan rune) {
 
 			case '\\':
 				mainConv.testaPost.Text(activeUser).insSingleElem('\\', cursor)
+				cursor++
 
 			default:
 				fmt.Println("ERRORE azione", cc, "non disponibile")
