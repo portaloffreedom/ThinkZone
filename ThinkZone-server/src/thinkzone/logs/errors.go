@@ -1,0 +1,4 @@
+// errors
+package logs
+
+import ()

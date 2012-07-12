@@ -26,10 +26,15 @@ type Client struct {
 
 	//utente associato al client
 	user *database.User
+
+	//conversazione attiva
+	//TODO *database.Conversation
 }
 
-var serverFakeUser database.User = database.User{42, "server"}
-var mainConv *database.Conversation = database.NewConversation(&serverFakeUser)
+var (
+	serverFakeUser database.User          = database.User{42, "server"}
+	mainConv       *database.Conversation = database.NewConversation(&serverFakeUser)
+)
 
 func NewClient(conn *net.Conn) *Client {
 	var client *Client = new(Client)
@@ -53,7 +58,7 @@ func NewClient(conn *net.Conn) *Client {
 
 	err2 := mainConv.NewUserConnection(client.user)
 	if err2 != nil {
-		fmt.Println("#01", err2)
+		fmt.Println(err2)
 		return nil
 	}
 
@@ -186,7 +191,7 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 					//TODO gestisci errore
 					fmt.Println("Errore nel leggere dalla rete")
 					clientAttivo.blocco <- 1 //TODO dovresti chiudere il canale e tutto quanto
-					//client.
+					clientAttivo.gestisciDisconnessione(mainConv)
 					break
 				}
 			}
@@ -208,43 +213,6 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 		duration := time.Since(start)
 		if duration <= tempoDaAspettare {
 			time.Sleep(tempoDaAspettare - duration)
-		}
-	}
-}
-
-func gestisciClient(conn net.Conn) (*Client, func(chan *Client)) {
-	fmt.Print("Nuova connessione: ")
-	fmt.Println(conn.RemoteAddr())
-
-	client := NewClient(&conn)
-	if client == nil {
-		conn.Close()
-		return nil, nil
-	}
-
-	return client, func(readiness chan *Client) {
-
-		for {
-			_, err := client.stream.ReadByte()
-			if err != nil {
-				//TODO gestisci errore
-				//TODO fare un pacchetto per la raccolta degli errori
-				fmt.Print("connessione interrotta: ")
-				fmt.Println(conn.RemoteAddr())
-				client.gestisciDisconnessione(mainConv)
-				return
-			}
-			err = client.stream.UnreadByte()
-			if err != nil {
-				//TODO gestisci errore
-				//TODO fare un pacchetto per la raccolta degli errori
-				fmt.Print("connessione interrotta: ")
-				fmt.Println(conn.RemoteAddr())
-				return
-			}
-
-			readiness <- client
-			<-client.blocco
 		}
 	}
 }
@@ -287,6 +255,7 @@ func StartServer(laddr string) {
 				go gestore(codaReadiness)
 				codaAccettazioni <- client
 			} else {
+				//L'handshaking non è andato a buon fine
 				conn.Close()
 			}
 		}()
