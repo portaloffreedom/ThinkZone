@@ -1,11 +1,36 @@
 // logs
 package logs
 
-import ()
+import (
+	"fmt"
+	//	"strconv"
+	"strings"
+)
 
 //TODO var tutti i log
+//type LogFile interface {
+//}
 
-//TODO init del package: inizializzare il primo log di error
+var (
+	stampa_su_terminale bool   = false
+	logFilename         string = "thinkzone-server.log"
+)
 
-type Log interface {
+func StampaSuTerminale(stampa bool) {
+	stampa_su_terminale = stampa
+}
+
+func Log(messageArray ...string) {
+	message := strings.Join(messageArray, "")
+	//	message = strings.Join([]string{message}, " : ") //TODO stampare anche l'orario del log'
+
+	if stampa_su_terminale {
+		fmt.Println(message)
+	}
+
+	stampaSuFile(message)
+}
+
+func stampaSuFile(message string) {
+
 }

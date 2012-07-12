@@ -63,6 +63,10 @@ func (post *Post) Text(user *User) *SuperString {
 	return post.testo
 }
 
+func (conv *Conversation) TotalConversation() string {
+	return conv.TestaPost.testo.GetComplete(false)
+}
+
 func (post *Post) Respond(conv *Conversation, user *User) *Post {
 	response := conv.NewPost(user, post)
 	post.risposte.PushBack(response)

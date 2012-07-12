@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"thinkzone/logs"
 )
 
 type elemSuperString struct {
@@ -222,7 +223,7 @@ func removeFromRunes(origin []rune, s_size int, pos int, howmany int) []rune {
 func (lista *SuperString) DelElem(pos int, howmany int) {
 	fmt.Println("Cercando di eliminare: pos=", pos, " howmany=", howmany)
 	if pos < 0 {
-		fmt.Println("che cazzo stai cercando di eliminare???")
+		logs.Error("che cazzo stai cercando di eliminare???")
 		return
 	}
 	//roRebuildTotal = true
@@ -232,6 +233,10 @@ func (lista *SuperString) DelElem(pos int, howmany int) {
 	for pos > posAttuale.size {
 		pos -= posAttuale.size
 		posAttuale = posAttuale.succ
+		if posAttuale == nil {
+			logs.Error("Cercando di eliminare fuori dalla stringa, l'eliminazione verrà ignorata")
+			return
+		}
 	}
 
 	//elimina prima stringa

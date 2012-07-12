@@ -9,6 +9,7 @@ import (
 	"strconv" //to convert integer into a string
 	"strings"
 	"thinkzone/database"
+	"thinkzone/logs"
 	"time"
 
 //	"unsafe"
@@ -35,40 +36,6 @@ var (
 	serverFakeUser database.User          = database.User{42, "server"}
 	mainConv       *database.Conversation = database.NewConversation(&serverFakeUser)
 )
-
-func NewClient(conn *net.Conn) *Client {
-	var client *Client = new(Client)
-	client.stream = bufio.NewReadWriter(bufio.NewReader(*conn), bufio.NewWriter(*conn))
-
-	//TODO get username from client TCP stream
-	s, err := client.stream.ReadString('\\')
-	if err != nil {
-		fmt.Print("ERRORE NEL LEGGERE LO USERNAME DI: ")
-		fmt.Println((*conn).RemoteAddr())
-	}
-	username := strings.Trim(s, "\\")
-	fmt.Println("IP:", (*conn).RemoteAddr(), "USERNAME:", username)
-	var newuser bool
-	client.user, newuser = database.Data.ConnectUser(username)
-	if !newuser {
-		fmt.Println("connessione di un utente già registrato")
-		//TODO gestisci se l'utente è già connesso alla conversazione - \
-		//due utenti con lo stesso nome non possono essere connessi contemporaneamente
-	}
-
-	err2 := mainConv.NewUserConnection(client.user)
-	if err2 != nil {
-		fmt.Println(err2)
-		return nil
-	}
-
-	client.stream.WriteString(strconv.Itoa(client.user.ID))
-	client.stream.WriteRune('\\')
-	client.stream.Flush()
-
-	client.blocco = make(chan int, 1)
-	return client
-}
 
 func mangiaCarattereDiControllo(c rune, input chan rune) bool {
 	d := <-input
@@ -229,8 +196,10 @@ func spedisci(codaNewConn chan *Client, readiness chan *Client) {
 
 func StartServer(laddr string) {
 	ln, err := net.Listen("tcp", laddr)
+	logs.Log("Server in ascolto su: \"", laddr, "\"")
 	if err != nil {
-		fmt.Println("Errore nell'aprire la connessione")
+		logs.Error("Errore nell'aprire la connessione: ", err.Error())
+		return
 		//TODO handle error
 	}
 
@@ -246,7 +215,7 @@ func StartServer(laddr string) {
 		conn, err := ln.Accept()
 		if err != nil {
 			//TODO fare un pacchetto per la raccolta degli errori
-			fmt.Println("Tentativo di connessione non andato a buon fine")
+			logs.Error("Tentativo di connessione non andato a buon fine: ", err.Error())
 		}
 
 		go func() {
