@@ -29,7 +29,7 @@ type Client struct {
 }
 
 var serverFakeUser database.User = database.User{42, "server"}
-var mainConv *database.Conversation /*{	"prova",
+var mainConv *database.Conversation = database.NewConversation(&serverFakeUser) /*{	"prova",
  * 1,
  * connected     map[int]*database.User
  * postMap       map[int]*Post
@@ -51,9 +51,15 @@ func NewClient(conn *net.Conn) *Client {
 	fmt.Println("IP:", (*conn).RemoteAddr(), "USERNAME:", username)
 	var newuser bool
 	client.user, newuser = database.Data.ConnectUser(username)
-	mainConv.NewUserConnection(client.user)
 	if !newuser {
-		fmt.Println("impossibile connettere di nuovo lo stesso userid")
+		fmt.Println("connessione di un utente già registrato")
+		//TODO gestisci se l'utente è già connesso alla conversazione - \
+		//due utenti con lo stesso nome non possono essere connessi contemporaneamente
+	}
+
+	err2 := mainConv.NewUserConnection(client.user)
+	if err2 != nil {
+		fmt.Println("#01", err2)
 		return nil
 	}
 
@@ -207,8 +213,6 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 
 		duration := time.Since(start)
 		if duration <= tempoDaAspettare {
-			//			fmt.Printf("ho aspettato: %v ", tempoDaAspettare-duration)
-			//			fmt.Printf("### dati in coda: %d ###\n", len(readiness))
 			time.Sleep(tempoDaAspettare - duration)
 		}
 	}
@@ -218,7 +222,6 @@ func gestisciClient(conn net.Conn) (*Client, func(chan *Client)) {
 	fmt.Print("Nuova connessione: ")
 	fmt.Println(conn.RemoteAddr())
 
-	//client := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 	client := NewClient(&conn)
 	if client == nil {
 		conn.Close()
@@ -228,14 +231,13 @@ func gestisciClient(conn net.Conn) (*Client, func(chan *Client)) {
 	return client, func(readiness chan *Client) {
 
 		for {
-			//buf, err := client.stream.ReadByte()
 			_, err := client.stream.ReadByte()
 			if err != nil {
 				//TODO gestisci errore
 				//TODO fare un pacchetto per la raccolta degli errori
 				fmt.Print("connessione interrotta: ")
 				fmt.Println(conn.RemoteAddr())
-
+				client.gestisciDisconnessione(mainConv)
 				return
 			}
 			err = client.stream.UnreadByte()
@@ -251,10 +253,6 @@ func gestisciClient(conn net.Conn) (*Client, func(chan *Client)) {
 			<-client.blocco
 		}
 	}
-}
-
-func (client *Client) gestisciDisconnessione() {
-
 }
 
 func spedisci(codaNewConn chan *Client, readiness chan *Client) {
@@ -290,7 +288,11 @@ func StartServer(laddr string) {
 		}
 
 		client, gestore := gestisciClient(conn)
-		go gestore(codaReadiness)
-		codaAccettazioni <- client
+		if client != nil {
+			go gestore(codaReadiness)
+			codaAccettazioni <- client
+		} else {
+			conn.Close()
+		}
 	}
 }

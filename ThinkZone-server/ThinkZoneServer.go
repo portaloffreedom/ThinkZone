@@ -16,6 +16,4 @@ func main() {
 	network.StartServer(":4242")
 	//	StartServer(":80")
 
-	//lingua := NewSuperString()
-	//fmt.Println(lingua.GetCompleteWithSeparators("]["))
 }

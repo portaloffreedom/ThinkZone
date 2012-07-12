@@ -2,8 +2,9 @@
 package database
 
 import (
-	//	"fmt"
 	"container/list"
+
+//	"fmt"
 )
 
 type ConversationError struct {
@@ -98,13 +99,13 @@ func NewConversation(creator *User) *Conversation {
 
 func (conv *Conversation) NewUserConnection(user *User) *ConversationError {
 
-	if conv.connected[user.ID] != nil {
-		return NewConversationError("L'utente "+user.Username+" è già connesso", conv)
+	if userold, ok := conv.connected[user.ID]; ok {
+		return NewConversationError("L'utente "+userold.Username+" è già connesso", conv)
+	} else {
+		conv.connected[user.ID] = user
+		return nil
 	}
-
-	conv.connected[user.ID] = user
 	return nil
-
 }
 
 func (conv *Conversation) UserDisconnection(user *User) {
