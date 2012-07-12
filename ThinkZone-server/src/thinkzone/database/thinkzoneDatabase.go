@@ -1,13 +1,13 @@
 // database
-package main
+package database
 
 import (
 //"fmt"
 )
 
 type User struct {
-	id       int
-	username string
+	ID       int
+	Username string
 }
 
 type databaseRegistration struct {
@@ -16,7 +16,7 @@ type databaseRegistration struct {
 	contatore    int //sostituire con lista degli id non usati
 }
 
-var data databaseRegistration = databaseRegistration{make(map[string]*User), make(map[int]*User), 0}
+var Data databaseRegistration = databaseRegistration{make(map[string]*User), make(map[int]*User), 0}
 
 //this function assign an id to an username
 //return the id assigned
@@ -29,10 +29,10 @@ func (datab *databaseRegistration) ConnectUser(s string) (user *User, newuser bo
 	if user, present = datab.UserNameToId[s]; !present {
 		datab.contatore++
 		user = new(User)
-		user.id = datab.contatore
-		user.username = s
+		user.ID = datab.contatore
+		user.Username = s
 		datab.UserNameToId[s] = user
-		datab.UserIDtoUser[user.id] = user
+		datab.UserIDtoUser[user.ID] = user
 
 		newuser = true
 	} else {
@@ -46,13 +46,13 @@ func (datab *databaseRegistration) ConnectUser(s string) (user *User, newuser bo
 /*
 //deprecated
 func (datab *databaseRegistration) AddUserId(s string) (int, bool) {
-	id := datab.UserNameToId[s]
+	ID := datab.UserNameToId[s]
 
-	if id == 0 {
+	if ID == 0 {
 		datab.contatore++
-		id = datab.contatore
-		datab.UserNameToId[s] = id
-		return id, true
+		ID = datab.contatore
+		datab.UserNameToId[s] = ID
+		return ID, true
 	} else {
 		//TODO error already exists
 		return 0, false

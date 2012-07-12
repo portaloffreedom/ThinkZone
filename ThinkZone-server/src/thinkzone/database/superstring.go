@@ -1,5 +1,5 @@
 // superstring
-package main
+package database
 
 import (
 	"fmt"
@@ -98,15 +98,15 @@ func (lista *SuperString) GetComplete(separators bool) string {
 
 }
 
-func (lista *SuperString) insSingleElem(appendRune rune, pos int) {
-	lista.insElem([]rune{appendRune}, pos)
+func (lista *SuperString) InsSingleElem(appendRune rune, pos int) {
+	lista.InsElem([]rune{appendRune}, pos)
 }
 
-func (lista *SuperString) insStringElem(s string, pos int) {
-	lista.insElem([]rune(s), pos)
+func (lista *SuperString) InsStringElem(s string, pos int) {
+	lista.InsElem([]rune(s), pos)
 }
 
-func (lista *SuperString) insElem(appendRunes []rune, pos int) {
+func (lista *SuperString) InsElem(appendRunes []rune, pos int) {
 
 	if lista.dim == 1 && lista.testa.size == 0 {
 		pos = -1
@@ -219,7 +219,7 @@ func removeFromRunes(origin []rune, s_size int, pos int, howmany int) []rune {
 	return origin
 }
 
-func (lista *SuperString) delElem(pos int, howmany int) {
+func (lista *SuperString) DelElem(pos int, howmany int) {
 	fmt.Println("Cercando di eliminare: pos=", pos, " howmany=", howmany)
 	if pos < 0 {
 		fmt.Println("che cazzo stai cercando di eliminare???")
