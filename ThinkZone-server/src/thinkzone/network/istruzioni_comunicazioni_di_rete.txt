@@ -1,0 +1,13 @@
+username\    \password\
+	 \R0\	       id\
+
+username\    \password\
+	 \R1\	       id\
+
+username\
+	 \R2\ close()
+
+Login
+0→ok
+1→registration needed
+2→utente già connesso altrove

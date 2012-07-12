@@ -29,13 +29,7 @@ type Client struct {
 }
 
 var serverFakeUser database.User = database.User{42, "server"}
-var mainConv *database.Conversation = database.NewConversation(&serverFakeUser) /*{	"prova",
- * 1,
- * connected     map[int]*database.User
- * postMap       map[int]*Post
- * contatorePost int
- * TestaPost     *Post	 }
- */
+var mainConv *database.Conversation = database.NewConversation(&serverFakeUser)
 
 func NewClient(conn *net.Conn) *Client {
 	var client *Client = new(Client)
@@ -287,12 +281,15 @@ func StartServer(laddr string) {
 			fmt.Println("Tentativo di connessione non andato a buon fine")
 		}
 
-		client, gestore := gestisciClient(conn)
-		if client != nil {
-			go gestore(codaReadiness)
-			codaAccettazioni <- client
-		} else {
-			conn.Close()
-		}
+		go func() {
+			client, gestore := gestisciClient(conn)
+			if client != nil {
+				go gestore(codaReadiness)
+				codaAccettazioni <- client
+			} else {
+				conn.Close()
+			}
+		}()
+
 	}
 }
