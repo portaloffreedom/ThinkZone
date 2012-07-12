@@ -10,7 +10,8 @@ class Post(QtGui.QTextEdit):
     '''
     Classe per gestire il testo in arrivo e da inviare.
     '''
-    testo = None
+    testo = ''
+    blink_cursor = 0
     
     def __init__(self,parent=None):
         QtGui.QTextEdit.__init__(self,parent)
@@ -35,30 +36,42 @@ class Post(QtGui.QTextEdit):
             posizione += aggiunti
         cursore = self.textCursor()
         cursore.setPosition(posizione)
+        self.blink_cursor = posizione
         self.setTextCursor(cursore)
         
         
-    def textUpdate(self):    
+    def textUpdate(self,posizione,quanti):
+        self.blink_cursor = self.textCursor().position()
+        if(posizione < self.blink_cursor):
+            if (quanti < 0):
+                distanza = (posizione - quanti - self.blink_cursor)
+                if (distanza >0):
+                    quanti += distanza        
+            self.blink_cursor +=quanti
+        cursore = self.textCursor()    
         self.setText(self.testo)
+        cursore.setPosition(self.blink_cursor)
         self.update()
+        self.setTextCursor(cursore)
     
     def aggiungiTesto(self,posizione,stringa):
-        print('aggiungo')
+        print('aggiungo',stringa,'in posizione',posizione)
         cursore = self.textCursor()
         cursore.setPosition(posizione)
         testo1 = self.testo[:posizione]
         self.testo = testo1 + stringa + self.testo[posizione:]
+        posizione = posizione + len(stringa)
         self._tcpSync(False)
-        self.textUpdate()
+        self.textUpdate(posizione,len(stringa))
         self._tcpSync(True)
         
     def rimuoviTesto(self,posizione,rimossi):
-        print('tolgo')
+        print('tolgo ',rimossi,' caratteri dalla posizione ',posizione)
         cursore = self.textCursor()
         cursore.setPosition(posizione)
-        testo1 = self.testo[:posizione-rimossi]
-        temp = self.testo[posizione:]
-        self.testo = testo1+temp
+        prima = self.testo[:posizione]
+        dopo = self.testo[posizione+rimossi:]
+        self.testo = prima+dopo
         self._tcpSync(False)
-        self.textUpdate()
+        self.textUpdate(posizione,-rimossi)
         self._tcpSync(True)

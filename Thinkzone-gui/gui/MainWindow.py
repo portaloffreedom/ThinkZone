@@ -6,10 +6,10 @@ Finestra principale che si occupa di connettere le componenti della GUI e i widg
 import sys
 from utils import PostArea
 from rete import Comunicazione
-from gui import mwind
-from PyQt4 import QtGui, QtCore
+from gui import finestraprincipale
+from PyQt4 import QtGui, QtCore, Qt
 
-class FinestraPrincipale(QtGui.QMainWindow, mwind.Ui_finestraprincipale):
+class FinestraPrincipale(QtGui.QMainWindow, finestraprincipale.Ui_finestraprincipale):
     '''
     Classe per la finestra principale.
     '''
@@ -18,10 +18,12 @@ class FinestraPrincipale(QtGui.QMainWindow, mwind.Ui_finestraprincipale):
     def __init__(self, parent = None):
         QtGui.QMainWindow.__init__(self, parent)
         self._textextended = PostArea.Post()
-        self.ui = mwind.Ui_finestraprincipale()
+        self.ui = finestraprincipale.Ui_finestraprincipale()
         self.setupUi(self)
         self.scroll_layout_2.addWidget(self._textextended)
         self._connettore = Comunicazione.comunicatore()
+        QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('rimozione(int,int)'),self._textextended.rimuoviTesto,2)
+        QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),self._textextended.aggiungiTesto,2)
         QtCore.QObject.connect(self.bottone_connetti,QtCore.SIGNAL('pressed()'), self.connetti)
         QtCore.QObject.connect(self._textextended,QtCore.SIGNAL('testoRimosso(int,int)'), self.dati_rimossi)
         QtCore.QObject.connect(self._textextended,QtCore.SIGNAL('testoAggiunto(int,QString)'), self.dati_aggiunti)
@@ -38,8 +40,6 @@ class FinestraPrincipale(QtGui.QMainWindow, mwind.Ui_finestraprincipale):
         porta = porta.encode()
         porta = int(porta)
         self._connettore.connetti(self.testo_host.text(), porta,self.testo_nickname.text())
-        QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('rimozione(int,int)'),self._textextended.rimuoviTesto)
-        QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),self._textextended.aggiungiTesto)
         self._connettore.start()
 
         

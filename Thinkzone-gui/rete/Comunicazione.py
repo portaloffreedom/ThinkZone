@@ -15,7 +15,7 @@ class comunicatore(QtCore.QThread):
     _posizione = None
     _messaggi = None
     _stop = None
-    cursore = None
+    blink_cursor = None
     _utenteAttivo = None
     _userID = None
     _receive_thread = None
@@ -25,57 +25,79 @@ class comunicatore(QtCore.QThread):
         self._socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self._messaggi = queue.Queue(255)
         self._stop = False
-        rimozione = QtCore.pyqtSignal(int,int,name='rimozione')
-        aggiunta = QtCore.pyqtSignal(int,str,name='aggiunta')
+        _rimozione = QtCore.pyqtSignal(int,int,name='rimozione')
+        _aggiunta = QtCore.pyqtSignal(int,str,name='aggiunta')
+        self.blink_cursor = 0
         
     def run(self):
         while(not(self._stop)):
             messaggio = self._messaggi.get(True, None)
-            if(self._parseinput(messaggio)):
-                print('emetto')
-                self.emit(QtCore.SIGNAL('aggiunta(int,str)'),self.cursore,messaggio)
-            
+            messaggio = (messaggio).decode("utf-8")
+            #print('messaggio',messaggio)
+            if(self._parseinput(messaggio) and self._utenteAttivo != self._userID):
+                print('emetto',messaggio)
+                self.emit(QtCore.SIGNAL('aggiunta(int,QString)'),self.blink_cursor,messaggio)
+                self.blink_cursor += 1
+           
+    def _controller(self,controllo,messaggio):
+        if(controllo != '\\'):
+            print('Errore stream TCP!',file=sys.stderr)
+            self.blink_cursor = 0 
+            messaggio = None
+        return messaggio
+    
+    def _recvInt(self):
+        intero = 0
+        next = '\00'
+        while(True):
+            next = self._messaggi.get(True,None).decode("utf-8")
+            if(next == '\\' or int(next) < 0 or int(next) > 9):
+                return intero,next
+            intero = intero*10+int(next)
     
     def _parseinput(self,messaggio):
+        controllo = '\00'
         if(messaggio == '\\'):
-            messaggio = self._messaggi.get(False,None)
-        else:
-            return True
-        if(messaggio == '\\'):
-            return True
-        if(messaggio == 'P'):
-            self.cursore = self._messaggi.get(False,None)
-            controllo = self._messaggi.get(False,None)
-            if(controllo != '\\'):
-                print('Errore stream TCP!',file=sys.stderr)
-                self.cursore = None
-            return False
-        if(messaggio == 'D'):
-            quantita = self._messaggi.get(False,None)
-            self.cursore -= quantita
-            controllo = self._messaggi.get(False,None)
-            if(controllo != '\\'):
-                print('Errore stream TCP!',file=sys.stderr)
-                self.cursore = None
-            else:
+            print('caso 1')
+            messaggio = self._messaggi.get(True,None).decode("utf-8")
+            if(messaggio == '\\'):
+                return True
+            if(messaggio == 'P'):
+                print('caso P')
+                [self.blink_cursor, controllo] = self._recvInt()
+                messaggio = self._controller(controllo, messaggio)
+                return False
+            if(messaggio == 'D'):
+                print('caso D')
+                [quantita, controllo] = self._recvInt()
+                self.blink_cursor -= quantita
+                #controllo = self._messaggi.get(True,None)
+                messaggio = self._controller(controllo, messaggio)
+                if(messaggio == None):
+                    return False
+                else:
+                    if(self._utenteAttivo != self._userID):
+                        self.emit(QtCore.SIGNAL('rimozione(int,int)'),self.blink_cursor,quantita)   
+                return False
+            if(messaggio== 'U'):
+                print('caso U')
+                [self._utenteAttivo,controllo] = self._recvInt()
+                print('utente attivo',self._utenteAttivo)
                 if(self._utenteAttivo != self._userID):
-                    self.emit(self,QtCore.SIGNAL('rimozione(int,int)'),self._cursore,quantita)
-            return False
-        if(messaggio== 'U'):
-            self._utenteAttivo = self._messaggi.get(False,None)
-            controllo = self._messaggi.get(False,None)
-            if(controllo != '\\'):
-                print('Errore stream TCP!',file=sys.stderr)
-                self.cursore = None
-            return False
-        
+                    self.cursore_locale = self.blink_cursor
+                messaggio = self._controller(controllo, messaggio)
+                return False
+        return True
+    
     def connetti(self,hostname,porta,nickname):
         self._socket.connect((hostname,porta))
         self._receive_thread = Receiver(self._messaggi,self._socket)
         self._receive_thread.start()
         self._spedisci(nickname+'\\')
-        messaggio = self._messaggi.get(True, None)
-        self._userID = messaggio
+        controllo = '\00'
+        [self._userID,controllo] = self._recvInt()
+        print('il tuo ID',self._userID)
+        print(controllo)
         
     def disconnetti(self):
         self._socket.close()
