@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'about.ui'
 #
-# Created: Thu Jul 12 20:16:25 2012
+# Created: Fri Jul 13 17:36:18 2012
 #      by: PyQt4 UI code generator 4.9.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -17,7 +17,7 @@ except AttributeError:
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName(_fromUtf8("Dialog"))
-        Dialog.resize(799, 641)
+        Dialog.resize(803, 659)
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/images/gelatino_icon.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         Dialog.setWindowIcon(icon)
@@ -56,10 +56,18 @@ class Ui_Dialog(object):
         self.textEdit_2.setPalette(palette)
         self.textEdit_2.setFrameShape(QtGui.QFrame.NoFrame)
         self.textEdit_2.setFrameShadow(QtGui.QFrame.Plain)
+        self.textEdit_2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.textEdit_2.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.textEdit_2.setUndoRedoEnabled(False)
         self.textEdit_2.setTextInteractionFlags(QtCore.Qt.NoTextInteraction)
         self.textEdit_2.setObjectName(_fromUtf8("textEdit_2"))
         self.verticalLayout_3.addWidget(self.textEdit_2)
+        self.labelVersion = QtGui.QLabel(self.widget_2)
+        self.labelVersion.setLayoutDirection(QtCore.Qt.LeftToRight)
+        self.labelVersion.setTextFormat(QtCore.Qt.LogText)
+        self.labelVersion.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.labelVersion.setObjectName(_fromUtf8("labelVersion"))
+        self.verticalLayout_3.addWidget(self.labelVersion)
         self.verticalLayout_2.addWidget(self.widget_2)
         self.verticalLayout.addWidget(self.widget)
         self.widget_3 = QtGui.QWidget(Dialog)
@@ -87,6 +95,7 @@ class Ui_Dialog(object):
 "<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:14pt;\"><br /></p>\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Programmatori:<br />Roberto &quot;Sten_Gun&quot; Benfatto     - Lead gui designer, logo designer, server interface</p>\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Matteo &quot;Dek&quot; De Carlo    - Server side interaction, server interface<br /></p></body></html>", None, QtGui.QApplication.UnicodeUTF8))
+        self.labelVersion.setText(QtGui.QApplication.translate("Dialog", "Version", None, QtGui.QApplication.UnicodeUTF8))
         self.buttonChiudi.setText(QtGui.QApplication.translate("Dialog", "Chiudi", None, QtGui.QApplication.UnicodeUTF8))
 
 import immagini_rc

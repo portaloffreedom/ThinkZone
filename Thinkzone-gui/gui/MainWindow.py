@@ -16,6 +16,7 @@ class FinestraPrincipale(QtGui.QMainWindow, finestraprincipale.Ui_finestraprinci
     _textextended = None
     _connettore = None
     _aboutwindow = None
+    VERSION = "0.0.2"
     def __init__(self, parent = None):
         QtGui.QMainWindow.__init__(self, parent)
         self._textextended = PostArea.Post()
@@ -26,6 +27,7 @@ class FinestraPrincipale(QtGui.QMainWindow, finestraprincipale.Ui_finestraprinci
         QtCore.QObject.connect(self.serverBox,QtCore.SIGNAL('currentIndexChanged(QString)'),self.cambioindici)
         self.scroll_layout_2.addWidget(self._textextended)
         self._connettore = Comunicazione.comunicatore()
+        self._aboutwindow.labelVersion.setText("Version: "+self.VERSION)
         QtCore.QObject.connect(self.actionAbout_Thinkzone,QtCore.SIGNAL('triggered()'),self._aboutwindow.show),
         QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('rimozione(int,int)'),self._textextended.rimuoviTesto,2)
         QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),self._textextended.aggiungiTesto,2)
