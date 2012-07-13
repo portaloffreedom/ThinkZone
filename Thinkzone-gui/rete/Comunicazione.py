@@ -19,7 +19,7 @@ class comunicatore(QtCore.QThread):
     _utenteAttivo = None
     _userID = None
     _receive_thread = None
-    
+    _response = None
     def __init__(self):
         QtCore.QThread.__init__(self)
         self._socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -32,12 +32,23 @@ class comunicatore(QtCore.QThread):
     def run(self):
         while(not(self._stop)):
             messaggio = self._messaggi.get(True, None)
-            messaggio = (messaggio).decode("utf-8")
+            try:
+                messaggio = (messaggio).decode("utf-8")
+            except:
+                self._stop = True
+                self._receive_thread.setTerminationEnabled()
+                self._receive_thread._stop = True
+                continue
             #print('messaggio',messaggio)
             if(self._parseinput(messaggio) and self._utenteAttivo != self._userID):
                 print('emetto',messaggio)
                 self.emit(QtCore.SIGNAL('aggiunta(int,QString)'),self.blink_cursor,messaggio)
                 self.blink_cursor += 1
+        try:
+            self._socket.close()
+        finally:
+            self._stop = False
+            self._socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
            
     def _controller(self,controllo,messaggio):
         if(controllo != '\\'):
@@ -60,6 +71,7 @@ class comunicatore(QtCore.QThread):
         if(messaggio == '\\'):
             print('caso 1')
             messaggio = self._messaggi.get(True,None).decode("utf-8")
+            print('comando:',messaggio)
             if(messaggio == '\\'):
                 return True
             if(messaggio == 'P'):
@@ -87,18 +99,73 @@ class comunicatore(QtCore.QThread):
                     self.cursore_locale = self.blink_cursor
                 messaggio = self._controller(controllo, messaggio)
                 return False
+            if(messaggio =='R'):
+                print('Caso Response')
+                [self._response,controllo] = self._recvInt()
+                print('risposta',self._response)
+                messaggio = self._controller(controllo, messaggio)
+                print(controllo)
+                return False
         return True
     
-    def connetti(self,hostname,porta,nickname):
+    def registrati(self,hostname,porta,nickname,password):
         self._socket.connect((hostname,porta))
         self._receive_thread = Receiver(self._messaggi,self._socket)
         self._receive_thread.start()
-        self._spedisci(nickname+'\\')
+        self._spedisci('\L1\\')
+        self._spedisci(nickname+'\\'+password+'\\')
+        messaggio = self._messaggi.get(True, None).decode("utf-8")
+        if(self._parseinput(messaggio) or self._parseResponse(self._response)):
+            print('Errore di registrazione! errore ',self._response)
+            sys.exit()
+        print('Registrazione completata!')
+        self._socket.close()
+        self._socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        self._receive_thread.setTerminationEnabled(True)
+        self._receive_thread._stop = True
+        self._messaggi.put('close')
+        print(self._messaggi.get())
+    
+    def connetti(self,hostname,porta,nickname,password):
+        self._socket.connect((hostname,porta))
+        self._receive_thread = Receiver(self._messaggi,self._socket)
+        self._receive_thread.start()
+        
+        self._spedisci('\L0\\')
+        self._spedisci(nickname+'\\'+password+'\\')
+        messaggio = self._messaggi.get(True, None).decode("utf-8")
+        
+        if(self._parseinput(messaggio)):
+            print('Errore di login! Errore',self._response)
+            return
+        
         controllo = '\00'
-        [self._userID,controllo] = self._recvInt()
+        if(self._parseResponse(self._response)):
+            errore = 'il server non ha accettato la connessione'
+            try:
+                self._receive_thread._stop = True
+                self._socket.close()
+            except:
+                errore = 'il server ha chiuso la connessione!'
+            finally:
+                print(errore,file=sys.stderr)
+                self._stop = True
+                self._messaggi.put('close')
+                print(self._messaggi.get())
+                return
+        try:
+            [self._userID,controllo] = self._recvInt()
+        except:
+            print('connessione chiusa!')
+            sys.exit()
         print('il tuo ID',self._userID)
         print(controllo)
         
+    def _parseResponse(self,response):
+        if(response == 0):
+            return False
+        return True
+    
     def disconnetti(self):
         self._socket.close()
         
@@ -133,5 +200,10 @@ class Receiver(QtCore.QThread):
     def run(self):
         while(not(self._stop)):
             print('ricevimento')
-            self._coda.put(self._socket.recv(1))
+            try:
+                self._coda.put(self._socket.recv(1))
+            except:
+                print('eccezione')
+                self._stop = True
+        self._stop = False
     

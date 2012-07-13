@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="images">
+    <file>gelatino_icon2.png</file>
+    <file>gelatino_icon.png</file>
+  </qresource>
+</RCC>
