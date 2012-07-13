@@ -2,12 +2,16 @@
 package database
 
 import (
-//"fmt"
+	//"fmt"
+	"bytes"
+	"crypto/sha256"
+	"hash"
 )
 
 type User struct {
 	ID       int
 	Username string
+	password hash.Hash
 }
 
 type databaseRegistration struct {
@@ -16,7 +20,11 @@ type databaseRegistration struct {
 	contatore    int //sostituire con lista degli id non usati
 }
 
-var Data databaseRegistration = databaseRegistration{make(map[string]*User), make(map[int]*User), 0}
+var (
+	ServerFakeUser User                 = User{42, "server", sha256.New()}
+	MainConv       *Conversation        = NewConversation(&ServerFakeUser)
+	Data           databaseRegistration = databaseRegistration{make(map[string]*User), make(map[int]*User), 0}
+)
 
 //this function assign an id to an username
 //return the id assigned
@@ -27,13 +35,6 @@ func (datab *databaseRegistration) ConnectUser(s string) (user *User, newuser bo
 	var present bool
 
 	if user, present = datab.UserNameToId[s]; !present {
-		datab.contatore++
-		user = new(User)
-		user.ID = datab.contatore
-		user.Username = s
-		datab.UserNameToId[s] = user
-		datab.UserIDtoUser[user.ID] = user
-
 		newuser = true
 	} else {
 		newuser = false
@@ -43,22 +44,31 @@ func (datab *databaseRegistration) ConnectUser(s string) (user *User, newuser bo
 
 }
 
-/*
-//deprecated
-func (datab *databaseRegistration) AddUserId(s string) (int, bool) {
-	ID := datab.UserNameToId[s]
+func (datab *databaseRegistration) RegisterNewUser(username, password string) (user *User, success bool) {
 
-	if ID == 0 {
+	var present bool
+
+	if user, present = datab.UserNameToId[username]; !present {
 		datab.contatore++
-		ID = datab.contatore
-		datab.UserNameToId[s] = ID
-		return ID, true
+		user = new(User)
+		user.ID = datab.contatore
+		user.Username = username
+		hashpassword := sha256.New()
+		hashpassword.Write([]byte(password))
+		user.password = hashpassword
+
+		datab.UserNameToId[username] = user
+		datab.UserIDtoUser[user.ID] = user
+
+		success = true
 	} else {
-		//TODO error already exists
-		return 0, false
+		success = false
+		user = nil
 	}
-	return 0, false
-}*/
+
+	return
+
+}
 
 func (datab *databaseRegistration) GetUserByName(s string) *User {
 	return datab.UserNameToId[s]
@@ -66,4 +76,10 @@ func (datab *databaseRegistration) GetUserByName(s string) *User {
 
 func (datab *databaseRegistration) GetUserByID(id int) *User {
 	return datab.UserIDtoUser[id]
+}
+
+func (user *User) VerifyPassword(passwordInput string) bool {
+	hashinput := sha256.New()
+	hashinput.Write([]byte(passwordInput))
+	return bytes.Equal(hashinput.Sum([]byte{}), user.password.Sum([]byte{}))
 }

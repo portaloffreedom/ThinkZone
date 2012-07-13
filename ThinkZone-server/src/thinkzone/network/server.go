@@ -9,6 +9,7 @@ import (
 	"strconv" //to convert integer into a string
 	"strings"
 	"thinkzone/database"
+	"thinkzone/logs"
 	"time"
 
 //	"unsafe"
@@ -26,49 +27,9 @@ type Client struct {
 
 	//utente associato al client
 	user *database.User
-}
 
-var serverFakeUser database.User = database.User{42, "server"}
-var mainConv *database.Conversation = database.NewConversation(&serverFakeUser) /*{	"prova",
- * 1,
- * connected     map[int]*database.User
- * postMap       map[int]*Post
- * contatorePost int
- * TestaPost     *Post	 }
- */
-
-func NewClient(conn *net.Conn) *Client {
-	var client *Client = new(Client)
-	client.stream = bufio.NewReadWriter(bufio.NewReader(*conn), bufio.NewWriter(*conn))
-
-	//TODO get username from client TCP stream
-	s, err := client.stream.ReadString('\\')
-	if err != nil {
-		fmt.Print("ERRORE NEL LEGGERE LO USERNAME DI: ")
-		fmt.Println((*conn).RemoteAddr())
-	}
-	username := strings.Trim(s, "\\")
-	fmt.Println("IP:", (*conn).RemoteAddr(), "USERNAME:", username)
-	var newuser bool
-	client.user, newuser = database.Data.ConnectUser(username)
-	if !newuser {
-		fmt.Println("connessione di un utente già registrato")
-		//TODO gestisci se l'utente è già connesso alla conversazione - \
-		//due utenti con lo stesso nome non possono essere connessi contemporaneamente
-	}
-
-	err2 := mainConv.NewUserConnection(client.user)
-	if err2 != nil {
-		fmt.Println("#01", err2)
-		return nil
-	}
-
-	client.stream.WriteString(strconv.Itoa(client.user.ID))
-	client.stream.WriteRune('\\')
-	client.stream.Flush()
-
-	client.blocco = make(chan int, 1)
-	return client
+	//conversazione attiva
+	//TODO *database.Conversation
 }
 
 func mangiaCarattereDiControllo(c rune, input chan rune) bool {
@@ -115,7 +76,7 @@ func gestisciTestoConversazione(input chan rune) {
 		case '\\': //caso di carattere di controllo
 			cc := <-input
 			switch cc {
-			case 'P':
+			case 'C':
 				cursor, cc = mangiaIntero(input)
 				if cc != '\\' {
 					fmt.Println("ERRORE lettura stream: carattere di controllo mangiato non Intero")
@@ -127,7 +88,7 @@ func gestisciTestoConversazione(input chan rune) {
 				}
 				cursor -= howmany
 				//TODO rimuovi testo
-				mainConv.TestaPost.Text(activeUser).DelElem(cursor, howmany)
+				database.MainConv.TestaPost.Text(activeUser).DelElem(cursor, howmany)
 			case 'U':
 				newUserID, ccc := mangiaIntero(input)
 				if ccc != '\\' {
@@ -136,7 +97,7 @@ func gestisciTestoConversazione(input chan rune) {
 				activeUser = database.Data.GetUserByID(newUserID)
 
 			case '\\':
-				mainConv.TestaPost.Text(activeUser).InsSingleElem('\\', cursor)
+				database.MainConv.TestaPost.Text(activeUser).InsSingleElem('\\', cursor)
 				cursor++
 
 			default:
@@ -144,14 +105,14 @@ func gestisciTestoConversazione(input chan rune) {
 			}
 
 		default:
-			mainConv.TestaPost.Text(activeUser).InsSingleElem(c, cursor)
+			database.MainConv.TestaPost.Text(activeUser).InsSingleElem(c, cursor)
 			cursor++
 
 			//TODO anche qui si può pensare ad un flasher a tempo per minimizzare il lavoro su superstring
 		}
 
-		//		fmt.Println("---", mainConv.TestaPost.Text(activeUser).GetComplete(true), "---") //DEBUG
-		fmt.Println(mainConv.TestaPost.Text(activeUser).GetComplete(true)) //DEBUG
+		//		fmt.Println("---", database.MainConv.TestaPost.Text(activeUser).GetComplete(true), "---") //DEBUG
+		fmt.Println(database.MainConv.TestaPost.Text(activeUser).GetComplete(true)) //DEBUG
 
 	}
 }
@@ -192,7 +153,7 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 					//TODO gestisci errore
 					fmt.Println("Errore nel leggere dalla rete")
 					clientAttivo.blocco <- 1 //TODO dovresti chiudere il canale e tutto quanto
-					//client.
+					clientAttivo.gestisciDisconnessione(database.MainConv)
 					break
 				}
 			}
@@ -218,43 +179,6 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 	}
 }
 
-func gestisciClient(conn net.Conn) (*Client, func(chan *Client)) {
-	fmt.Print("Nuova connessione: ")
-	fmt.Println(conn.RemoteAddr())
-
-	client := NewClient(&conn)
-	if client == nil {
-		conn.Close()
-		return nil, nil
-	}
-
-	return client, func(readiness chan *Client) {
-
-		for {
-			_, err := client.stream.ReadByte()
-			if err != nil {
-				//TODO gestisci errore
-				//TODO fare un pacchetto per la raccolta degli errori
-				fmt.Print("connessione interrotta: ")
-				fmt.Println(conn.RemoteAddr())
-				client.gestisciDisconnessione(mainConv)
-				return
-			}
-			err = client.stream.UnreadByte()
-			if err != nil {
-				//TODO gestisci errore
-				//TODO fare un pacchetto per la raccolta degli errori
-				fmt.Print("connessione interrotta: ")
-				fmt.Println(conn.RemoteAddr())
-				return
-			}
-
-			readiness <- client
-			<-client.blocco
-		}
-	}
-}
-
 func spedisci(codaNewConn chan *Client, readiness chan *Client) {
 	codaCiclica := list.New()
 
@@ -267,12 +191,14 @@ func spedisci(codaNewConn chan *Client, readiness chan *Client) {
 
 func StartServer(laddr string) {
 	ln, err := net.Listen("tcp", laddr)
+	logs.Log("Server in ascolto su: \"", laddr, "\"")
 	if err != nil {
-		fmt.Println("Errore nell'aprire la connessione")
+		logs.Error("Errore nell'aprire la connessione: ", err.Error())
+		return
 		//TODO handle error
 	}
 
-	mainConv = database.NewConversation(&serverFakeUser)
+	database.MainConv = database.NewConversation(&database.ServerFakeUser)
 
 	//canale := make(chan byte, 256)
 	codaReadiness := make(chan *Client, 64)
@@ -284,15 +210,19 @@ func StartServer(laddr string) {
 		conn, err := ln.Accept()
 		if err != nil {
 			//TODO fare un pacchetto per la raccolta degli errori
-			fmt.Println("Tentativo di connessione non andato a buon fine")
+			logs.Error("Tentativo di connessione non andato a buon fine: ", err.Error())
 		}
 
-		client, gestore := gestisciClient(conn)
-		if client != nil {
-			go gestore(codaReadiness)
-			codaAccettazioni <- client
-		} else {
-			conn.Close()
-		}
+		go func() {
+			client, gestore := gestisciClient(conn)
+			if client != nil {
+				go gestore(codaReadiness)
+				codaAccettazioni <- client
+			} else {
+				//L'handshaking non è andato a buon fine
+				conn.Close()
+			}
+		}()
+
 	}
 }

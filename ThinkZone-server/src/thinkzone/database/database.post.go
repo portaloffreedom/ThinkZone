@@ -4,6 +4,8 @@ package database
 import (
 	"container/list"
 
+//	"crypto/sha256"
+
 //	"fmt"
 )
 
@@ -61,6 +63,10 @@ func (conv *Conversation) NewPost(creator *User, padre *Post) *Post {
 func (post *Post) Text(user *User) *SuperString {
 	post.addWriter(user)
 	return post.testo
+}
+
+func (conv *Conversation) TotalConversation() string {
+	return conv.TestaPost.testo.GetComplete(false)
 }
 
 func (post *Post) Respond(conv *Conversation, user *User) *Post {

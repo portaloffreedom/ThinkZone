@@ -3,6 +3,7 @@ package main
 
 import (
 	"fmt"
+	"thinkzone/logs"
 	"thinkzone/network"
 
 	//	"database/sql"	
@@ -11,7 +12,8 @@ import (
 )
 
 func main() {
-	fmt.Println("Hello## World!")
+	fmt.Println("Benvenuto su ThinkZone!")
+	logs.StampaSuTerminale(true)
 
 	network.StartServer(":4242")
 	//	StartServer(":80")
