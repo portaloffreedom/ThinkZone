@@ -46,19 +46,13 @@ func gestisciClient(conn net.Conn) (*Client, func(chan *Client)) {
 		for {
 			_, err := client.stream.ReadByte()
 			if err != nil {
-				//TODO gestisci errore
-				//TODO fare un pacchetto per la raccolta degli errori
-				fmt.Print("connessione interrotta: ")
-				fmt.Println(conn.RemoteAddr())
+				logs.Error("connessione interrotta: ", conn.RemoteAddr().String())
 				client.gestisciDisconnessione(database.MainConv)
 				return
 			}
 			err = client.stream.UnreadByte()
 			if err != nil {
-				//TODO gestisci errore
-				//TODO fare un pacchetto per la raccolta degli errori
-				fmt.Print("connessione interrotta: ")
-				fmt.Println(conn.RemoteAddr())
+				logs.Error("connessione interrotta: ", conn.RemoteAddr().String())
 				client.gestisciDisconnessione(database.MainConv)
 				return
 			}
@@ -201,6 +195,8 @@ func (client *Client) login() error {
 	if !client.user.VerifyPassword(password) {
 		return NewErrorLogin(client, username+" Password errata")
 	}
+
+	logs.Log("Login riuscito di ", username, " da ", (*client.conn).RemoteAddr().String())
 
 	client.stream.WriteString("\\R0\\")
 	client.stream.Flush()
