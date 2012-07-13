@@ -68,6 +68,7 @@ class Post(QtGui.QTextEdit):
         
     def rimuoviTesto(self,posizione,rimossi):
         print('tolgo ',rimossi,' caratteri dalla posizione ',posizione)
+        self.testo = self.toPlainText()
         cursore = self.textCursor()
         cursore.setPosition(posizione)
         prima = self.testo[:posizione]
