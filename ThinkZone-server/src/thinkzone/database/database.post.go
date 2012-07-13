@@ -1,9 +1,12 @@
 // database.post
-package main
+package database
 
 import (
-	//	"fmt"
 	"container/list"
+
+//	"crypto/sha256"
+
+//	"fmt"
 )
 
 type ConversationError struct {
@@ -19,12 +22,12 @@ func NewConversationError(errExplanation string, conv *Conversation) *Conversati
 }
 
 func (err *ConversationError) Error() string {
-	return "Errore nella conversazione: " + err.conv.title + "\n" + err.errExplanation
+	return "Errore nella conversazione: " + err.conv.Title + "\n" + err.errExplanation
 }
 
 type Conversation struct {
-	title            string
-	id_conversazione int
+	Title            string
+	ID_conversazione int
 
 	//totale_numero_post int
 	//privata	         bool
@@ -32,7 +35,7 @@ type Conversation struct {
 	connected     map[int]*User
 	postMap       map[int]*Post
 	contatorePost int
-	testaPost     *Post
+	TestaPost     *Post
 }
 
 type Post struct {
@@ -60,6 +63,10 @@ func (conv *Conversation) NewPost(creator *User, padre *Post) *Post {
 func (post *Post) Text(user *User) *SuperString {
 	post.addWriter(user)
 	return post.testo
+}
+
+func (conv *Conversation) TotalConversation() string {
+	return conv.TestaPost.testo.GetComplete(false)
 }
 
 func (post *Post) Respond(conv *Conversation, user *User) *Post {
@@ -90,25 +97,25 @@ func NewConversation(creator *User) *Conversation {
 	conv.postMap = make(map[int]*Post)
 
 	conv.contatorePost = 1
-	conv.connected[creator.id] = creator
-	conv.testaPost = conv.NewPost(creator, nil)
+	conv.connected[creator.ID] = creator
+	conv.TestaPost = conv.NewPost(creator, nil)
 
 	return conv
 }
 
 func (conv *Conversation) NewUserConnection(user *User) *ConversationError {
 
-	if conv.connected[user.id] != nil {
-		return NewConversationError("L'utente "+user.username+" è già connesso", conv)
+	if userold, ok := conv.connected[user.ID]; ok {
+		return NewConversationError("L'utente "+userold.Username+" è già connesso", conv)
+	} else {
+		conv.connected[user.ID] = user
+		return nil
 	}
-
-	conv.connected[user.id] = user
 	return nil
-
 }
 
 func (conv *Conversation) UserDisconnection(user *User) {
-	delete(conv.connected, user.id)
+	delete(conv.connected, user.ID)
 }
 
 //create a post in response of the given post

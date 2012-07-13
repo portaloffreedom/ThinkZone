@@ -1,10 +1,11 @@
 // superstring
-package main
+package database
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
+	"thinkzone/logs"
 )
 
 type elemSuperString struct {
@@ -98,15 +99,15 @@ func (lista *SuperString) GetComplete(separators bool) string {
 
 }
 
-func (lista *SuperString) insSingleElem(appendRune rune, pos int) {
-	lista.insElem([]rune{appendRune}, pos)
+func (lista *SuperString) InsSingleElem(appendRune rune, pos int) {
+	lista.InsElem([]rune{appendRune}, pos)
 }
 
-func (lista *SuperString) insStringElem(s string, pos int) {
-	lista.insElem([]rune(s), pos)
+func (lista *SuperString) InsStringElem(s string, pos int) {
+	lista.InsElem([]rune(s), pos)
 }
 
-func (lista *SuperString) insElem(appendRunes []rune, pos int) {
+func (lista *SuperString) InsElem(appendRunes []rune, pos int) {
 
 	if lista.dim == 1 && lista.testa.size == 0 {
 		pos = -1
@@ -219,10 +220,10 @@ func removeFromRunes(origin []rune, s_size int, pos int, howmany int) []rune {
 	return origin
 }
 
-func (lista *SuperString) delElem(pos int, howmany int) {
-	fmt.Println("Cercando di eliminare: pos=", pos, " howmany=", howmany)
+func (lista *SuperString) DelElem(pos int, howmany int) {
+	//	fmt.Println("Cercando di eliminare: pos=", pos, " howmany=", howmany)
 	if pos < 0 {
-		fmt.Println("che cazzo stai cercando di eliminare???")
+		logs.Error("che cazzo stai cercando di eliminare???")
 		return
 	}
 	//roRebuildTotal = true
@@ -232,12 +233,16 @@ func (lista *SuperString) delElem(pos int, howmany int) {
 	for pos > posAttuale.size {
 		pos -= posAttuale.size
 		posAttuale = posAttuale.succ
+		if posAttuale == nil {
+			logs.Error("Cercando di eliminare fuori dalla stringa, l'eliminazione verrà ignorata")
+			return
+		}
 	}
 
 	//elimina prima stringa
 	quanti_eliminare := howmany
 	if pos+howmany <= posAttuale.size { //elimina solo posizione attuale
-		fmt.Println("Elimina solo posizione attuale") //DEBUG
+		//		fmt.Println("Elimina solo posizione attuale") //DEBUG
 		//vecchio := posAttuale.elemento
 		//posAttuale.elemento = strings.Join([]string{vecchio[0:pos], vecchio[pos+howmany : posAttuale.size]}, "") //remove dalla stringa corrente
 		if (posAttuale.size - quanti_eliminare) == 0 {
@@ -268,7 +273,7 @@ func (lista *SuperString) delElem(pos int, howmany int) {
 	quanti_eliminare = howmany - quanti_eliminare
 
 	for posAttuale.succ != nil && quanti_eliminare >= posAttuale.size {
-		fmt.Println("Elimino stringa di mezzo") //DEBUG
+		//		fmt.Println("Elimino stringa di mezzo") //DEBUG
 		quanti_eliminare -= posAttuale.size
 
 		tmp := posAttuale.succ
@@ -280,7 +285,7 @@ func (lista *SuperString) delElem(pos int, howmany int) {
 	if posAttuale.size == quanti_eliminare {
 		lista.delSingleElem(posAttuale)
 	} else {
-		fmt.Println("Elimino da ultima stringa") //DEBUG
+		//		fmt.Println("Elimino da ultima stringa") //DEBUG
 		posAttuale.elemento = removeFromRunes(posAttuale.elemento, posAttuale.size, 0, quanti_eliminare)
 		posAttuale.size -= quanti_eliminare
 	}

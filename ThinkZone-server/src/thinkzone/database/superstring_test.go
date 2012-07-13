@@ -1,5 +1,5 @@
 // superstring_test
-package main
+package database
 
 import (
 	"fmt"

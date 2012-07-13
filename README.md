@@ -4,4 +4,5 @@ ThinkZone
 Recreation of the google wave project
 
 
-This project is still not working
+This project at a very early stage
+only the single post sync is implemented (but working :D)
