@@ -55,6 +55,7 @@ class Post(QtGui.QTextEdit):
         self.setTextCursor(cursore)
     
     def aggiungiTesto(self,posizione,stringa):
+        self.testo = self.toPlainText()
         print('aggiungo',stringa,'in posizione',posizione)
         cursore = self.textCursor()
         cursore.setPosition(posizione)
