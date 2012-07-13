@@ -76,7 +76,7 @@ func gestisciTestoConversazione(input chan rune) {
 		case '\\': //caso di carattere di controllo
 			cc := <-input
 			switch cc {
-			case 'P':
+			case 'C':
 				cursor, cc = mangiaIntero(input)
 				if cc != '\\' {
 					fmt.Println("ERRORE lettura stream: carattere di controllo mangiato non Intero")
