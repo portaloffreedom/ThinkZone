@@ -11,6 +11,8 @@ import (
 //type LogFile interface {
 //}
 
+//TODO lock sulla scrittura sul log
+
 var (
 	stampa_su_terminale bool   = false
 	logFilename         string = "thinkzone-server.log"

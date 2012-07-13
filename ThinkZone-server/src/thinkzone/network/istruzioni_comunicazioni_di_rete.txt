@@ -1,13 +1,14 @@
-username\    \password\
-	 \R0\	       id\
+username\password\
+	 			 \R0\id\superstringa
+	 			 \R1\close()
+	 			 \R2\close()
+	 			 \R3\close()
 
-username\    \password\
-	 \R1\	       id\
-
-username\
-	 \R2\ close()
+\L1\username\password\
+	 				 \R0\close()
 
 Login
 0→ok
-1→registration needed
+1→registration needed (utente non esistente)
 2→utente già connesso altrove
+3→password_errata

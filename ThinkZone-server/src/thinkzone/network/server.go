@@ -32,11 +32,6 @@ type Client struct {
 	//TODO *database.Conversation
 }
 
-var (
-	serverFakeUser database.User          = database.User{42, "server"}
-	mainConv       *database.Conversation = database.NewConversation(&serverFakeUser)
-)
-
 func mangiaCarattereDiControllo(c rune, input chan rune) bool {
 	d := <-input
 	if c == d {
@@ -93,7 +88,7 @@ func gestisciTestoConversazione(input chan rune) {
 				}
 				cursor -= howmany
 				//TODO rimuovi testo
-				mainConv.TestaPost.Text(activeUser).DelElem(cursor, howmany)
+				database.MainConv.TestaPost.Text(activeUser).DelElem(cursor, howmany)
 			case 'U':
 				newUserID, ccc := mangiaIntero(input)
 				if ccc != '\\' {
@@ -102,7 +97,7 @@ func gestisciTestoConversazione(input chan rune) {
 				activeUser = database.Data.GetUserByID(newUserID)
 
 			case '\\':
-				mainConv.TestaPost.Text(activeUser).InsSingleElem('\\', cursor)
+				database.MainConv.TestaPost.Text(activeUser).InsSingleElem('\\', cursor)
 				cursor++
 
 			default:
@@ -110,14 +105,14 @@ func gestisciTestoConversazione(input chan rune) {
 			}
 
 		default:
-			mainConv.TestaPost.Text(activeUser).InsSingleElem(c, cursor)
+			database.MainConv.TestaPost.Text(activeUser).InsSingleElem(c, cursor)
 			cursor++
 
 			//TODO anche qui si può pensare ad un flasher a tempo per minimizzare il lavoro su superstring
 		}
 
-		//		fmt.Println("---", mainConv.TestaPost.Text(activeUser).GetComplete(true), "---") //DEBUG
-		fmt.Println(mainConv.TestaPost.Text(activeUser).GetComplete(true)) //DEBUG
+		//		fmt.Println("---", database.MainConv.TestaPost.Text(activeUser).GetComplete(true), "---") //DEBUG
+		fmt.Println(database.MainConv.TestaPost.Text(activeUser).GetComplete(true)) //DEBUG
 
 	}
 }
@@ -158,7 +153,7 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 					//TODO gestisci errore
 					fmt.Println("Errore nel leggere dalla rete")
 					clientAttivo.blocco <- 1 //TODO dovresti chiudere il canale e tutto quanto
-					clientAttivo.gestisciDisconnessione(mainConv)
+					clientAttivo.gestisciDisconnessione(database.MainConv)
 					break
 				}
 			}
@@ -203,7 +198,7 @@ func StartServer(laddr string) {
 		//TODO handle error
 	}
 
-	mainConv = database.NewConversation(&serverFakeUser)
+	database.MainConv = database.NewConversation(&database.ServerFakeUser)
 
 	//canale := make(chan byte, 256)
 	codaReadiness := make(chan *Client, 64)
