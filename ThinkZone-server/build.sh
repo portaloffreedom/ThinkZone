@@ -2,7 +2,7 @@
 
 export GOPATH=`pwd`
 
-go build
+go build src/cmd/ThinkZoneServer/ThinkZoneServer.go
 
 # 
 # echo
