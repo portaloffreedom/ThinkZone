@@ -44,13 +44,13 @@ func gestisciClient(conn net.Conn) (*Client, func(chan *Client)) {
 	return client, func(readiness chan *Client) {
 
 		for {
-			_, err := client.stream.ReadByte()
+			_, _, err := client.stream.ReadRune()
 			if err != nil {
 				logs.Error("connessione interrotta: ", conn.RemoteAddr().String(), "\n\tmotivazione: ", err.Error())
 				client.gestisciDisconnessione(database.MainConv)
 				return
 			}
-			err = client.stream.UnreadByte()
+			err = client.stream.UnreadRune()
 			if err != nil {
 				logs.Error("impossibile fare UnreadByte: ", conn.RemoteAddr().String(), "\n\tmotivazione: ", err.Error())
 				client.gestisciDisconnessione(database.MainConv)

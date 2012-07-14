@@ -118,7 +118,7 @@ func gestisciTestoConversazione(input chan rune) {
 }
 
 func flasher(codaCiclica *list.List, readiness chan *Client) {
-	tempoDaAspettare := 20 * time.Millisecond
+	tempoDaAspettare := 30 * time.Millisecond
 	var lastActiveUser int = -1
 	toSuperString := make(chan rune, 256)
 
