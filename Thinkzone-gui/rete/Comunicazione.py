@@ -121,22 +121,21 @@ class comunicatore(QtCore.QThread):
             print('Errore di registrazione! errore ',self._response)
             sys.exit()
         print('Registrazione completata!')
+        self._socket.shutdown(socket.SHUT_RDWR)
         self._socket.close()
         self._socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self._receive_thread.setTerminationEnabled(True)
         self._receive_thread._stop = True
-        self._messaggi.put('close')
-        print(self._messaggi.get())
+        self._messaggi = queue.Queue(255)
     
     def connetti(self,hostname,porta,nickname,password):
         self._socket.connect((hostname,porta))
         self._receive_thread = Receiver(self._messaggi,self._socket)
         self._receive_thread.start()
-        
         self._spedisci('\L0\\')
         self._spedisci(nickname+'\\'+password+'\\')
         messaggio = self._messaggi.get(True, None)
-        
+        print(messaggio,'ecc')
         if(self._parseinput(messaggio)):
             print('Errore di login! Errore',self._response)
             return
@@ -152,8 +151,7 @@ class comunicatore(QtCore.QThread):
             finally:
                 print(errore,file=sys.stderr)
                 self._stop = True
-                self._messaggi.put('close')
-                print(self._messaggi.get())
+                self._messaggi = queue.Queue(255)
                 return
         try:
             [self._userID,controllo] = self._recvInt()

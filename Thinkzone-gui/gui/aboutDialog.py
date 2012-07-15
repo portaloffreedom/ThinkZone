@@ -12,8 +12,9 @@ class aboutDial(QtGui.QDialog, about.Ui_Dialog):
 
 
     def __init__(self,parent = None):
-        QtGui.QDialog.__init__(self)
-        about.Ui_Dialog.setupUi(self,self)
+        QtGui.QDialog.__init__(self,parent)
+        self.ui = about.Ui_Dialog()
+        self.setupUi(self)
         QtCore.QObject.connect(self.buttonChiudi, QtCore.SIGNAL('pressed()'),self.close)
         '''
         Constructor
