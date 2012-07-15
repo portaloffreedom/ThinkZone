@@ -1,11 +1,11 @@
-username\password\
-	 			 \R0\id\superstringa
-	 			 \R1\close()
-	 			 \R2\close()
-	 			 \R3\close()
+\L0\K#@localhost\username\password\
+								   \R0\id\superstringa
+								   \R1\close()
+								   \R2\close()
+								   \R3\close()
 
 \L1\username\password\
-	 				 \R0\close()
+	 				  \R0\close()
 
 Login
 0→ok
