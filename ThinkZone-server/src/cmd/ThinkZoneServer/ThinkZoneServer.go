@@ -1,4 +1,4 @@
-// ThinkZone-server project main.go
+// ThinkZone-server project ThinkZoneServer.go
 package main
 
 import (

@@ -9,22 +9,6 @@ import (
 //	"fmt"
 )
 
-type ConversationError struct {
-	errExplanation string
-	conv           *Conversation
-}
-
-func NewConversationError(errExplanation string, conv *Conversation) *ConversationError {
-	err := new(ConversationError)
-	err.errExplanation = errExplanation
-	err.conv = conv
-	return err
-}
-
-func (err *ConversationError) Error() string {
-	return "Errore nella conversazione: " + err.conv.Title + "\n" + err.errExplanation
-}
-
 type Conversation struct {
 	Title            string
 	ID_conversazione int
@@ -45,6 +29,22 @@ type Post struct {
 
 	padre    *Post      //puntatore a cosa sto rispondendo
 	risposte *list.List //puntatore alle risposte
+}
+
+type ConversationError struct {
+	errExplanation string
+	conv           *Conversation
+}
+
+func NewConversationError(errExplanation string, conv *Conversation) *ConversationError {
+	err := new(ConversationError)
+	err.errExplanation = errExplanation
+	err.conv = conv
+	return err
+}
+
+func (err *ConversationError) Error() string {
+	return "Errore nella conversazione: " + err.conv.Title + "\n" + err.errExplanation
 }
 
 func (conv *Conversation) NewPost(creator *User, padre *Post) *Post {
