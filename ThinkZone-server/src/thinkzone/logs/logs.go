@@ -59,7 +59,7 @@ func init() {
 			fmt.Println("ma che cazz? non riesco a trovare me stesso?\n\tmotivo:", err)
 			return
 		}
-		myself.Signal(os.Kill)
+		myself.Signal(os.Kill) //TODO migliorare questa uscita
 
 		return
 	}(c)
@@ -77,7 +77,6 @@ func StampaSuTerminale(stampa bool) {
 
 func Log(messageArray ...string) {
 	message := strings.Join(messageArray, "")
-	//	message = strings.Join([]string{message}, " : ") //TODO stampare anche l'orario del log'
 
 	if stampa_su_terminale {
 		fmt.Println(message)
@@ -94,6 +93,8 @@ func stampaSuFile(message string) {
 		logFile.WriteString("\n" + date + "\n")
 		lastDate = date
 	}
+	
+	message = strings.Replace(message,"\n","\n\t",-1)
 
 	logFile.WriteString(clock + ": " + message)
 	logFile.WriteString("\n")

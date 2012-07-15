@@ -173,8 +173,6 @@ func (client *Client) login() error {
 	}
 	username = strings.Trim(username, "\\")
 
-	logs.Log("IP:", (*client.conn).RemoteAddr().String(), " USERNAME:", username)
-
 	//CONTROLLO SE L'UTENTE È GIÀ REGISTRATO
 	var newuser bool
 	client.user, newuser = database.Data.ConnectUser(username)
@@ -184,6 +182,8 @@ func (client *Client) login() error {
 		client.stream.Flush()
 		return err
 	}
+
+	logs.Log("IP:", (*client.conn).RemoteAddr().String(), " USERNAME:", username, " UserID:", strconv.Itoa(client.user.ID))
 
 	//RICHIESTA PASSWORD
 	password, err := client.stream.ReadString('\\')

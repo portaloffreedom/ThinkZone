@@ -15,6 +15,14 @@ import (
 //	"unsafe"
 )
 
+type TranslationError struct {
+	s string
+}
+
+func (err TranslationError) Error() string {
+	return err.s
+}
+
 type Client struct {
 	//socket TCP
 	conn *net.Conn
@@ -67,52 +75,110 @@ func mangiaIntero(input chan rune) (valore int, lastRead rune) {
 }
 
 //this function should run as goroutine
-func gestisciTestoConversazione(input chan rune) {
+func gestisciTestoConversazione(input chan rune, output chan rune) {
 	activeUser := database.Data.GetUserByID(0)
-	cursor := 0
-	for {
-		c := <-input
+	var errore error
+	var versoClient []rune
+	//	cursor := 0
+	for c := range input {
+		//		c := <-input
+		//		fmt.Println("input",string(c))
 		switch c {
 		case '\\': //caso di carattere di controllo
 			cc := <-input
+			//			fmt.Println("input",string(cc))
 			switch cc {
+			case 'K':
+				parent, cu := mangiaIntero(input)
+				if cu != '\\' {
+					errore = TranslationError{"ERRORE lettura stream: carattere di controllo mangiato != '\\'"}
+					break
+				}
+				var postRID int
+				postRID, errore = database.MainConv.Respond(parent, activeUser)
+				versoClient = []rune{'\\', 'K'}
+				versoClient = append(versoClient, ([]rune(strconv.Itoa(parent)))...)
+				versoClient = append(versoClient, '\\')
+				versoClient = append(versoClient, ([]rune(strconv.Itoa(postRID)))...)
+				versoClient = append(versoClient, '\\')
+			case 'P':
+				postCursor, cu := mangiaIntero(input)
+				if cu != '\\' {
+					errore = TranslationError{"ERRORE lettura stream: carattere di controllo mangiato != '\\'"}
+					break
+				}
+				errore = database.MainConv.ChangePost(activeUser, postCursor)
+				versoClient = []rune{'\\', cc}
+				versoClient = append(versoClient, ([]rune(strconv.Itoa(postCursor)))...)
+				versoClient = append(versoClient, '\\')
 			case 'C':
-				cursor, cc = mangiaIntero(input)
-				if cc != '\\' {
-					fmt.Println("ERRORE lettura stream: carattere di controllo mangiato non Intero")
+				cursor, cu := mangiaIntero(input)
+				if cu != '\\' {
+					errore = TranslationError{"ERRORE lettura stream: carattere di controllo mangiato != '\\'"}
+					break
 				}
+				errore = database.MainConv.ChangePos(activeUser, cursor)
+				versoClient = []rune{'\\', cc}
+				versoClient = append(versoClient, ([]rune(strconv.Itoa(cursor)))...)
+				versoClient = append(versoClient, '\\')
 			case 'D':
-				howmany, ccc := mangiaIntero(input)
-				if ccc != '\\' {
-					fmt.Println("ERRORE lettura stream: carattere di controllo mangiato non Intero")
+				howmany, cu := mangiaIntero(input)
+				if cu != '\\' {
+					errore = TranslationError{"ERRORE lettura stream: carattere di controllo mangiato != '\\'"}
+					break
 				}
-				cursor -= howmany
-				//TODO rimuovi testo
-				database.MainConv.TestaPost.Text(activeUser).DelElem(cursor, howmany)
+				versoClient = []rune{'\\', cc}
+				versoClient = append(versoClient, ([]rune(strconv.Itoa(howmany)))...)
+				versoClient = append(versoClient, '\\')
+				//cursor -= howmany
+				//database.MainConv.TestaPost.Text(activeUser).DelElem(cursor, howmany)
+				errore = database.MainConv.DelElem(activeUser, howmany)
 			case 'U':
-				newUserID, ccc := mangiaIntero(input)
-				if ccc != '\\' {
-					fmt.Println("ERRORE lettura stream: carattere di controllo mangiato non Intero")
+				newUserID, cu := mangiaIntero(input)
+				if cu != '\\' {
+					errore = TranslationError{"ERRORE lettura stream: carattere di controllo mangiato != '\\'"}
+					break
 				}
 				activeUser = database.Data.GetUserByID(newUserID)
+				versoClient = []rune{'\\', cc}
+				versoClient = append(versoClient, ([]rune(strconv.Itoa(newUserID)))...)
+				versoClient = append(versoClient, '\\')
 
 			case '\\':
-				database.MainConv.TestaPost.Text(activeUser).InsSingleElem('\\', cursor)
-				cursor++
+				//database.MainConv.TestaPost.Text(activeUser).InsSingleElem('\\', cursor)
+				errore = database.MainConv.InsElem(activeUser, []rune{'\\'})
+				versoClient = []rune{'\\'}
+				//cursor++
 
 			default:
 				fmt.Println("ERRORE azione", cc, "non disponibile")
 			}
 
+			if errore != nil {
+				logs.Error("errore nel lavorare sulla superstringa\n\tultimo comando: ", string(cc), "\n\tmotivo: ", errore.Error())
+				errore = nil
+			} else {
+				for i := range versoClient {
+					output <- versoClient[i]
+				}
+			}
+
 		default:
-			database.MainConv.TestaPost.Text(activeUser).InsSingleElem(c, cursor)
-			cursor++
+			//database.MainConv.TestaPost.Text(activeUser).InsSingleElem(c, cursor)
+			errore = database.MainConv.InsElem(activeUser, []rune{c})
+			output <- c
+			//cursor++
 
 			//TODO anche qui si può pensare ad un flasher a tempo per minimizzare il lavoro su superstring
 		}
 
+		if errore != nil {
+			logs.Error("errore nel lavorare sulla superstringa\n\t ultimo carattere: ", string(c), "\n\tmotivo: ", errore.Error())
+			errore = nil
+		}
+
 		//		fmt.Println("---", database.MainConv.TestaPost.Text(activeUser).GetComplete(true), "---") //DEBUG
-		fmt.Println(database.MainConv.TestaPost.Text(activeUser).GetComplete(true)) //DEBUG
+		fmt.Println(database.MainConv.GetComplete(true)) //DEBUG
 
 	}
 }
@@ -120,9 +186,20 @@ func gestisciTestoConversazione(input chan rune) {
 func flasher(codaCiclica *list.List, readiness chan *Client) {
 	tempoDaAspettare := 30 * time.Millisecond
 	var lastActiveUser int = -1
-	toSuperString := make(chan rune, 256)
+	input := make(chan rune, 256)
+	output := make(chan rune, 256)
 
-	go gestisciTestoConversazione(toSuperString)
+	go gestisciTestoConversazione(input, output)
+
+	go func() {
+		for buffer := range output {
+			for e := codaCiclica.Front(); e != nil; e = e.Next() {
+				client := e.Value.(*Client)
+				client.stream.WriteString(string(buffer))
+				client.stream.Flush()
+			}
+		}
+	}()
 
 	for {
 		start := time.Now()
@@ -148,7 +225,7 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 			var err error
 			for i := chiSonoSSize; i < chiSonoSSize+daLeggere; i++ {
 				buffer[i], _, err = clientAttivo.stream.ReadRune()
-				toSuperString <- buffer[i]
+				//				toSuperString <- buffer[i]
 				if err != nil {
 					//TODO gestisci errore
 					fmt.Println("Errore nel leggere dalla rete")
@@ -163,12 +240,9 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 			for i := 0; i < chiSonoSSize; i++ {
 				buffer[i] = []rune(chiSonoString)[i]
 			}
-
 			//spedisci
-			for e := codaCiclica.Front(); e != nil; e = e.Next() {
-				client := e.Value.(*Client)
-				client.stream.WriteString(string(buffer))
-				client.stream.Flush()
+			for i := 0; i < len(buffer); i++ {
+				input <- buffer[i]
 			}
 		}
 
