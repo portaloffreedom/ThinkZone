@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'conversations.ui'
 #
-# Created: Sun Jul 15 13:01:35 2012
+# Created: Sun Jul 15 22:12:50 2012
 #      by: PyQt4 UI code generator 4.9.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -18,33 +18,25 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
         MainWindow.resize(1117, 869)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/images/gelatino_icon2.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        MainWindow.setWindowIcon(icon)
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName(_fromUtf8("centralwidget"))
-        self.verticalLayout = QtGui.QVBoxLayout(self.centralwidget)
-        self.verticalLayout.setSpacing(2)
-        self.verticalLayout.setMargin(2)
-        self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
-        self.post_area = QtGui.QWidget(self.centralwidget)
-        self.post_area.setObjectName(_fromUtf8("post_area"))
-        self.verticalLayout_3 = QtGui.QVBoxLayout(self.post_area)
-        self.verticalLayout_3.setMargin(0)
-        self.verticalLayout_3.setMargin(0)
-        self.verticalLayout_3.setObjectName(_fromUtf8("verticalLayout_3"))
-        self.TextareaContainer = QtGui.QWidget(self.post_area)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Expanding)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.TextareaContainer.sizePolicy().hasHeightForWidth())
-        self.TextareaContainer.setSizePolicy(sizePolicy)
-        self.TextareaContainer.setMinimumSize(QtCore.QSize(0, 0))
-        self.TextareaContainer.setSizeIncrement(QtCore.QSize(0, 100))
-        self.TextareaContainer.setObjectName(_fromUtf8("TextareaContainer"))
-        self.layoutTextarea = QtGui.QVBoxLayout(self.TextareaContainer)
-        self.layoutTextarea.setMargin(0)
-        self.layoutTextarea.setMargin(0)
+        self.horizontalLayout = QtGui.QHBoxLayout(self.centralwidget)
+        self.horizontalLayout.setSpacing(2)
+        self.horizontalLayout.setMargin(2)
+        self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
+        self.scrollArea = QtGui.QScrollArea(self.centralwidget)
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.setObjectName(_fromUtf8("scrollArea"))
+        self.scrollAreaWidgetContents = QtGui.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 849, 725))
+        self.scrollAreaWidgetContents.setObjectName(_fromUtf8("scrollAreaWidgetContents"))
+        self.layoutTextarea = QtGui.QVBoxLayout(self.scrollAreaWidgetContents)
         self.layoutTextarea.setObjectName(_fromUtf8("layoutTextarea"))
-        self.verticalLayout_3.addWidget(self.TextareaContainer)
-        self.verticalLayout.addWidget(self.post_area)
+        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
+        self.horizontalLayout.addWidget(self.scrollArea)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtGui.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1117, 30))
@@ -101,6 +93,9 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.setObjectName(_fromUtf8("horizontalLayout_2"))
         spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout_2.addItem(spacerItem)
+        self.titoloEdit = QtGui.QLineEdit(self.dockWidgetContents_2)
+        self.titoloEdit.setObjectName(_fromUtf8("titoloEdit"))
+        self.horizontalLayout_2.addWidget(self.titoloEdit)
         self.buttonCrea = QtGui.QPushButton(self.dockWidgetContents_2)
         self.buttonCrea.setObjectName(_fromUtf8("buttonCrea"))
         self.horizontalLayout_2.addWidget(self.buttonCrea)
@@ -149,6 +144,7 @@ class Ui_MainWindow(object):
         self.menuFile.setTitle(QtGui.QApplication.translate("MainWindow", "File", None, QtGui.QApplication.UnicodeUTF8))
         self.menuAiuto.setTitle(QtGui.QApplication.translate("MainWindow", "Aiuto!", None, QtGui.QApplication.UnicodeUTF8))
         self.menuVisualizza.setTitle(QtGui.QApplication.translate("MainWindow", "Visualizza", None, QtGui.QApplication.UnicodeUTF8))
+        self.titoloEdit.setPlaceholderText(QtGui.QApplication.translate("MainWindow", "titolo del nuovo post", None, QtGui.QApplication.UnicodeUTF8))
         self.buttonCrea.setText(QtGui.QApplication.translate("MainWindow", "Crea", None, QtGui.QApplication.UnicodeUTF8))
         self.buttonElimina.setText(QtGui.QApplication.translate("MainWindow", "Elimina", None, QtGui.QApplication.UnicodeUTF8))
         self.actionLogin.setText(QtGui.QApplication.translate("MainWindow", "Login", None, QtGui.QApplication.UnicodeUTF8))
@@ -158,3 +154,4 @@ class Ui_MainWindow(object):
         self.actionLista_conversazioni.setText(QtGui.QApplication.translate("MainWindow", "Lista conversazioni", None, QtGui.QApplication.UnicodeUTF8))
         self.actionStrumenti_conversazione.setText(QtGui.QApplication.translate("MainWindow", "Strumenti conversazione", None, QtGui.QApplication.UnicodeUTF8))
 
+import immagini_rc
