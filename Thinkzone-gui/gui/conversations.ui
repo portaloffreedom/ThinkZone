@@ -13,8 +13,12 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="resources/immagini.qrc">
+    <normaloff>:/images/gelatino_icon2.png</normaloff>:/images/gelatino_icon2.png</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout">
+   <layout class="QHBoxLayout" name="horizontalLayout">
     <property name="spacing">
      <number>2</number>
     </property>
@@ -22,39 +26,21 @@
      <number>2</number>
     </property>
     <item>
-     <widget class="QWidget" name="post_area" native="true">
-      <layout class="QVBoxLayout" name="verticalLayout_3">
-       <property name="margin">
-        <number>0</number>
+     <widget class="QScrollArea" name="scrollArea">
+      <property name="widgetResizable">
+       <bool>true</bool>
+      </property>
+      <widget class="QWidget" name="scrollAreaWidgetContents">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>849</width>
+         <height>725</height>
+        </rect>
        </property>
-       <item>
-        <widget class="QWidget" name="TextareaContainer" native="true">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="sizeIncrement">
-          <size>
-           <width>0</width>
-           <height>100</height>
-          </size>
-         </property>
-         <layout class="QVBoxLayout" name="layoutTextarea">
-          <property name="margin">
-           <number>0</number>
-          </property>
-         </layout>
-        </widget>
-       </item>
-      </layout>
+       <layout class="QVBoxLayout" name="layoutTextarea"/>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -174,6 +160,13 @@
       </spacer>
      </item>
      <item>
+      <widget class="QLineEdit" name="titoloEdit">
+       <property name="placeholderText">
+        <string>titolo del nuovo post</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="buttonCrea">
        <property name="text">
         <string>Crea</string>
@@ -236,7 +229,9 @@
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="resources/immagini.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>actionEsci</sender>
