@@ -1,5 +1,4 @@
 '''
-Created on 11/lug/2012
 Classe comunicatore che riesce a ricevere e inviare dati.
 Ha dentro definite le meccaniche di comunicazione.
 @author: stengun
@@ -10,7 +9,9 @@ import sys
 from PyQt4 import QtCore
 
 class comunicatore(QtCore.QThread):
-    
+    '''
+    Generico comunicatore che imposta anche i thread per la ricezione.
+    '''
     _socket = None
     _posizione = None
     _messaggi = None
@@ -29,6 +30,7 @@ class comunicatore(QtCore.QThread):
         _rimozione = QtCore.pyqtSignal(int,int,name='rimozione')
         _aggiunta = QtCore.pyqtSignal(int,str,name='aggiunta')
         _nuovopost = QtCore.pyqtSignal(int,name='nuovoPost')
+        _selpost = QtCore.pyqtSignal(int,name='selectPost')
         self.blink_cursor = 0
         
     def run(self):
@@ -41,20 +43,23 @@ class comunicatore(QtCore.QThread):
                 self._receive_thread.setTerminationEnabled()
                 self._receive_thread._stop = True
                 continue
-            print('messaggio',messaggio)
+            #print('messaggio',messaggio)
             if(self._parseinput(messaggio) and self._utenteAttivo != self._userID):
-                print('emetto',messaggio)
+                print('scrivo:',messaggio)
                 self.emit(QtCore.SIGNAL('aggiunta(int,QString)'),self.blink_cursor,messaggio)
                 self.blink_cursor += 1
         try:
-            self._socket.close()
+            self.disconnetti()
         except:
             print('problema',sys.exc_info())
         finally:
             self._stop = False
-            self._socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
            
     def _controller(self,controllo,messaggio):
+        '''
+        Questo metodo decide se il carattere "controllo" è un carattere di fine comando.
+        Se questo test fallisce, imposta il valore di messaggio a None.
+        '''
         if(controllo != '\\'):
             print('Errore stream TCP!',file=sys.stderr)
             self.blink_cursor = 0 
@@ -62,6 +67,10 @@ class comunicatore(QtCore.QThread):
         return messaggio
     
     def _recvInt(self):
+        '''
+        Questo metodo riceve un numero intero da uno stream di input.
+        Ritorna due valori: [numero intero, carattere dopo l'intero]
+        '''
         intero = 0
         prossimo = '\00'
         while(True):
@@ -71,12 +80,16 @@ class comunicatore(QtCore.QThread):
             intero = intero*10+int(prossimo)
     
     def _parseinput(self,messaggio):
+        '''
+        Effettua l'analisi del messaggio ricevuto: Ritorna TRUE se si tratta di un carattere di controllo,
+        altri menti ritorna False quando si tratta di un comando.
+        '''
         controllo = '\00'
         
         if(messaggio == '\\'): # selezione comando
             print('caso 1')
             messaggio = self._messaggi.get(True,None)
-            print('comando:',messaggio)
+            #print('comando:',messaggio)
             if(messaggio == '\\'): #non è un comando.
                 return True
             if(messaggio == 'C'): #Modifica cursore
@@ -96,7 +109,7 @@ class comunicatore(QtCore.QThread):
                         self.emit(QtCore.SIGNAL('rimozione(int,int)'),self.blink_cursor,quantita)   
                 return False
             if(messaggio== 'U'): # Selezione utente
-                print('caso U')
+                #print('caso U')
                 [self._utenteAttivo,controllo] = self._recvInt()
                 print('utente attivo',self._utenteAttivo)
                 if(self._utenteAttivo != self._userID):
@@ -104,18 +117,19 @@ class comunicatore(QtCore.QThread):
                 messaggio = self._controller(controllo, messaggio)
                 return False
             if(messaggio =='R'): #Risposta a una azione
-                print('Caso Response')
+                #print('Caso Response')
                 [self._response,controllo] = self._recvInt()
-                print('risposta',self._response)
+                print('Caso Response: risposta',self._response)
                 messaggio = self._controller(controllo, messaggio)
-                print(controllo)
+                #print(controllo)
                 return False
             if(messaggio == 'P'):#creazione post
                 print('caso POST')
                 [idpost,controllo] = self._recvInt()
-                print('idPost',idpost)
+                #print('idPost',idpost)
                 messaggio = self._controller(controllo, messaggio)
-                self.emit(QtCore.SIGNAL('nuovoPost(int)'),idpost)
+                #self._activePost = idpost
+                self.emit(QtCore.SIGNAL('selectPost(int)'),idpost)
                 return False
             if(messaggio == 'K'):
                 print('caso Kreazione') #non sono un bimbominchia
@@ -127,6 +141,9 @@ class comunicatore(QtCore.QThread):
         return True
     
     def registrati(self,hostname,porta,nickname,password):
+        '''
+        Metodo per effettuare una registrazione ad un server.
+        '''
         self._socket.connect((hostname,porta))
         self._receive_thread = Receiver(self._messaggi,self._socket)
         self._receive_thread.start()
@@ -137,14 +154,12 @@ class comunicatore(QtCore.QThread):
             print('Errore di registrazione! errore ',self._response)
             sys.exit()
         print('Registrazione completata!')
-        self._socket.shutdown(socket.SHUT_RDWR)
-        self._socket.close()
-        self._socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        self._receive_thread.setTerminationEnabled(True)
-        self._receive_thread._stop = True
-        self._messaggi = queue.Queue(255)
+        self.disconnetti()
     
     def connetti(self,hostname,porta,nickname,password):
+        '''
+        Metodo per effettuare una connessione ad un server.
+        '''
         self._socket.connect((hostname,porta))
         self._receive_thread = Receiver(self._messaggi,self._socket)
         self._receive_thread.start()
@@ -160,38 +175,54 @@ class comunicatore(QtCore.QThread):
         if(self._parseResponse(self._response)):
             errore = 'il server non ha accettato la connessione'
             try:
-                self._receive_thread._stop = True
-                self._socket.close()
+                self.disconnetti()
             except:
                 errore = 'il server ha chiuso la connessione!'+sys.exc_info()
             finally:
                 print(errore,file=sys.stderr)
                 self._stop = True
-                self._messaggi = queue.Queue(255)
                 return
         try:
             [self._userID,controllo] = self._recvInt()
         except:
-            print('connessione chiusa!')
+            print('connessione chiusa!',file=sys.stderr)
             sys.exit()
         print('il tuo ID',self._userID)
         print(controllo)
         
     def _parseResponse(self,response):
+        '''
+        Metodo che analizza i codici di risposta, e ritorna True se è un codice di errore.
+        '''
         if(response == 0):
             return False
         return True
     
     def disconnetti(self):
+        '''
+        Classe che ti disconnette da un server.
+        Uccide il thread che ascolta e reimpostaa zero tutte le strutture dati.
+        '''
+        self._socket.shutdown(socket.SHUT_RDWR)
         self._socket.close()
+        self._socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        self._receive_thread.setTerminationEnabled(True)
+        self._receive_thread._stop = True
+        self._messaggi = queue.Queue(255)
         
     def _spedisci(self,data):
+        '''
+        Spedisce dei dati al server
+        '''
         try:
             self._socket.sendall(data.encode())
         except:
-            print('error',sys.exc_info())
+            print('errore di spedizione',sys.exc_info())
         
     def spedisci_aggiunta(self,posizione,dati,idpost):
+        '''
+        Spedisce al server una aggiunta di testo su uno specifico post e da una specifica posizione.
+        '''
         #dati = dati.encode()
         if(self._activePost != idpost):
             self._spedisci('\P'+str(idpost)+'\\')
@@ -203,6 +234,10 @@ class comunicatore(QtCore.QThread):
         self._posizione = posizione+1
         
     def spedisci_rimozione(self,posizione,rimossi,idpost):
+        '''
+        Spedisce al server una segnalazione di rimozione testo, con puntatore e numero di
+        caratteri che sono stati rimossi.
+        '''
         if(self._activePost != idpost):
             self._spedisci('\P'+str(idpost)+'\\')
             self._activePost = idpost
@@ -213,7 +248,9 @@ class comunicatore(QtCore.QThread):
         self._posizione = posizione-1
         
 class Receiver(QtCore.QThread):
-    
+    '''
+    Classe che rappresenta il thread per ricevere i dati
+    '''
     _coda = queue.Queue()
     _stop = None
     _socket = None
@@ -225,7 +262,7 @@ class Receiver(QtCore.QThread):
     
     def run(self):
         while(not(self._stop)):
-            print('ricevimento')
+            #print('ricevimento')
             try:
                 buffer = self._socket.recv(1)
                 try:
@@ -233,7 +270,7 @@ class Receiver(QtCore.QThread):
                 except:
                     buffer += self._socket.recv(1)
                     buffer = buffer.decode("utf-8")
-                print(buffer)
+                #print(buffer)
                 self._coda.put(buffer)
             except:
                 print('eccezione',sys.exc_info())

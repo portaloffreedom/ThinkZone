@@ -56,7 +56,7 @@ class Post(QtGui.QTextEdit):
     
     def aggiungiTesto(self,posizione,stringa):
         self.testo = self.toPlainText()
-        print('aggiungo',stringa,'in posizione',posizione)
+        #print('aggiungo',stringa,'in posizione',posizione)
         cursore = self.textCursor()
         cursore.setPosition(posizione)
         testo1 = self.testo[:posizione]
@@ -67,7 +67,7 @@ class Post(QtGui.QTextEdit):
         self._tcpSync(True)
         
     def rimuoviTesto(self,posizione,rimossi):
-        print('tolgo ',rimossi,' caratteri dalla posizione ',posizione)
+        #print('tolgo ',rimossi,' caratteri dalla posizione ',posizione)
         self.testo = self.toPlainText()
         cursore = self.textCursor()
         cursore.setPosition(posizione)

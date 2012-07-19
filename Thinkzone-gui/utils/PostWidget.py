@@ -1,15 +1,11 @@
 '''
 Created on 15/lug/2012
-
+Widget che rappresenta un post per il programma.
+I post hanno un ID che li rende unici.
 @author: stengun
 '''
-from utils import postwidget, PostArea
+from utils import PostArea
 from PyQt4 import QtGui, QtCore
-
-try:
-    _fromUtf8 = QtCore.QString.fromUtf8
-except AttributeError:
-    _fromUtf8 = lambda s: s
 
 class postWidget(QtGui.QWidget):
     '''
@@ -29,19 +25,36 @@ class postWidget(QtGui.QWidget):
         self.horizontalLayout.addWidget(self._textArea)
         
     def emettiRimosso(self,posizione,rimossi):
+        '''
+        Emette un segnale di rimozione testo.
+        '''
         self.emit(QtCore.SIGNAL('testoRimosso(int,int,int)'),posizione,rimossi,self._idpost)
         
     def emettiAggiunto(self,posizione,aggiunti):
+        '''
+        Emette un segnale di aggiunta testo, con la posizione e i caratteri.
+        '''
         self.emit(QtCore.SIGNAL('testoAggiunto(int,QString,int)'),posizione,aggiunti,self._idpost)
     
     def rimuoviTesto(self,posizione,rimossi):
+        '''
+        Rimuove il testo da una certa posizione e per un tot di caratteri
+        '''
+        print('Rimossi '+str(rimossi)+' caratteri dal post '+str(self._idpost))
         self._textArea.rimuoviTesto(posizione, rimossi)
 
     def aggiungiTesto(self,posizione,stringa):
+        '''
+        aggiunge il testo su una posizione.
+        '''
+        print('aggiunta la stringa "'+stringa+'" al post '+str(self._idpost))
         self._textArea.aggiungiTesto(posizione, stringa)
         
     def setupUi(self, Form):
-        Form.setObjectName(_fromUtf8("Form"))
+        '''
+        Imposta la finestra con gli oggetti.
+        '''
+        Form.setObjectName("Form")
         Form.resize(363, 105)
         self.setMaximumSize(2096,150)
         self.setMinimumSize(0, 100)
@@ -49,7 +62,7 @@ class postWidget(QtGui.QWidget):
         self.horizontalLayout = QtGui.QHBoxLayout(Form)
         self.horizontalLayout.setSpacing(3)
         self.horizontalLayout.setMargin(2)
-        self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
+        self.horizontalLayout.setObjectName("horizontalLayout")
         
         QtCore.QObject.connect(self._textArea, QtCore.SIGNAL("testoRimosso(int,int)"),self.emettiRimosso)
         QtCore.QObject.connect(self._textArea, QtCore.SIGNAL("testoAggiunto(int,QString)"),self.emettiAggiunto)

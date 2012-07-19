@@ -1,17 +1,19 @@
 '''
-Created on 11/lug/2012
-Finestra principale che si occupa di connettere le componenti della GUI e i widget personalizzati.
+Dialog window per il login. Viene richiamato dalla finestra principale.
+Costruisce la finestra di login dalla classe di PyQt4
 @author: stengun
 '''
 import sys
 from utils import PostArea
-from rete import Comunicazione
 from gui import login,aboutDialog
-from PyQt4 import QtGui, QtCore, Qt
+from PyQt4 import QtGui, QtCore
 
 class Login(QtGui.QDialog, login.Ui_Dialog):
     '''
     Classe per la finestra principale.
+    Eredita da login.Ui_Dialog. Costruisce e connette tutti i componenti della finestra
+    di login. Modificare questo file se si vuole aggiungere nuovi connettori o widget
+    particolari.
     '''
     _connettore = None
     _parent = None
@@ -32,6 +34,9 @@ class Login(QtGui.QDialog, login.Ui_Dialog):
         QtCore.QObject.connect(self.buttonRegister,QtCore.SIGNAL('pressed()'), self.registrati)
         
     def _abilitaLogin(self):
+        '''
+        Imposta attivato o disattivato i pulsanti per connettersi (o registrarsi)
+        '''
         pwdtext = self.passwordEdit.text()
         usertext = self.usernameEdit.text()
         if(pwdtext != '' and usertext != ''):
@@ -42,6 +47,9 @@ class Login(QtGui.QDialog, login.Ui_Dialog):
             self.buttonRegister.setEnabled(False)
     
     def cambioindici(self,elemento):
+        '''
+        Viene chiamata quando lo spinner per la selezione dei server cambia la sua selezione.
+        '''
         indes = elemento.find(':')
         host= elemento[:indes]
         porta = elemento[indes+1:]
@@ -53,14 +61,18 @@ class Login(QtGui.QDialog, login.Ui_Dialog):
             self.portaEdit.setText(porta)
             self.widget_hostname.setEnabled(False)
     
-    def dati_rimossi(self,posizione,rimossi):
-        #print('ci sono')
-        self._connettore.spedisci_rimozione(posizione,rimossi)
-    
-    def dati_aggiunti(self,posizione,aggiunti):
-        self._connettore.spedisci_aggiunta(posizione,aggiunti)
+#    def dati_rimossi(self,posizione,rimossi):
+#        #print('ci sono')
+#        self._connettore.spedisci_rimozione(posizione,rimossi)
+#    
+#    def dati_aggiunti(self,posizione,aggiunti):
+#        self._connettore.spedisci_aggiunta(posizione,aggiunti)
     
     def registrati(self):
+        '''
+        Metodo chiamato quando si preme il pulsante di registrazione a un server.
+        Invia nome utente e password inseriti come dati di registrazione.
+        '''
         hostname = self.hostEdit.text()
         nickname = self.usernameEdit.text()
         password = self.passwordEdit.text()
@@ -73,6 +85,9 @@ class Login(QtGui.QDialog, login.Ui_Dialog):
         self._connettore.registrati(hostname, porta, nickname, password)
     
     def connetti(self):
+        '''
+        Metodo chiamato quando si preme il pulsante di connessione.
+        '''
         porta = self.portaEdit.text()
         porta = porta.encode()
         hostname = self.hostEdit.text()
@@ -83,3 +98,4 @@ class Login(QtGui.QDialog, login.Ui_Dialog):
         self._connettore.connetti(hostname, porta,self.usernameEdit.text(),self.passwordEdit.text())
         self._connettore.start()
         self._parent._connettore = self._connettore
+        self.close()
