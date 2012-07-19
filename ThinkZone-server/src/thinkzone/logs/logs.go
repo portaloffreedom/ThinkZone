@@ -11,12 +11,23 @@ import (
 )
 
 var (
-	stampa_su_terminale bool   = false
-	logFilename         string = "thinkzone-server"
-	logFile             *os.File
-	lastDate            string = ""
+	// vero se i messaggi a livello di loggin devono essere stampati anche a terminale
+	stampa_su_terminale bool = false
+
+	// nome base del file di log del server
+	logFilename string = "thinkzone-server"
+
+	// stream del file di log 
+	logFile *os.File
+
+	// lock sul logFile
+	logFileLock chan int = make(chan int, 1)
+
+	// variabile necessaria per stabilire se scrivere che è cambiata data
+	lastDate string = ""
 )
 
+// Trasforma la variabile time passata in ingresso in una stringa ordinata e leggibile
 func getTimeString(t time.Time) (date, clock string) {
 	hour, min, sec := t.Clock()
 	year, month, day := t.Date()
@@ -25,6 +36,8 @@ func getTimeString(t time.Time) (date, clock string) {
 	return
 }
 
+// Init del pacchetto che apre il file di log in scrittura e gestisce cosa deve accadere in un 
+// eventuale chiusura
 func init() {
 	fmt.Println("Inizializzo il file di log")
 
@@ -40,6 +53,9 @@ func init() {
 
 	logFile.WriteString("File di log del server di ThinkZone\n")
 
+	logFileLock <- 0
+
+	//parte per la gestione della chiusura del server
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 
@@ -51,6 +67,8 @@ func init() {
 		if logFile != nil {
 			logFile.Close()
 		} else {
+
+			//TODO lock sulla scrittura sul log
 			fmt.Println("impossibile chiudere il file di log")
 		}
 		//		}
@@ -65,27 +83,29 @@ func init() {
 	}(c)
 }
 
-//TODO var tutti i log
-//type LogFile interface {
-//}
-
-//TODO lock sulla scrittura sul log
-
+// Imposta se i messaggi di log devono essere stampati anche a terminale
+// (i messaggi di errore saranno stampati a terminale comunque)
 func StampaSuTerminale(stampa bool) {
+	<-logFileLock
+	
 	stampa_su_terminale = stampa
+	
+	logFileLock <- 0
 }
 
+// Scrivi il messaggio sul file di Log
 func Log(messageArray ...string) {
 	message := strings.Join(messageArray, "")
 
+	stampaSuFile(message)
 	if stampa_su_terminale {
 		fmt.Println(message)
 	}
-
-	stampaSuFile(message)
 }
 
+// Scrivi sul file il messaggio di log
 func stampaSuFile(message string) {
+	<-logFileLock
 
 	date, clock := getTimeString(time.Now())
 
@@ -93,9 +113,11 @@ func stampaSuFile(message string) {
 		logFile.WriteString("\n" + date + "\n")
 		lastDate = date
 	}
-	
-	message = strings.Replace(message,"\n","\n\t",-1)
+
+	message = strings.Replace(message, "\n", "\n\t", -1)
 
 	logFile.WriteString(clock + ": " + message)
 	logFile.WriteString("\n")
+
+	logFileLock <- 0
 }

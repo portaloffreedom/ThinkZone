@@ -6,9 +6,11 @@ import (
 	"strings"
 )
 
+// Scrivi il messaggio di errore sul file di log (il messaggio verrà stampato
+// anche a terminale)
 func Error(messageArray ...string) {
 	message := strings.Join(messageArray, "")
-	message = strings.Join([]string{"#ERROR#", message}, " ") //TODO stampare anche l'orario del log'
+	message = strings.Join([]string{"#ERROR#", message}, " ")
 
 	fmt.Println(message)
 

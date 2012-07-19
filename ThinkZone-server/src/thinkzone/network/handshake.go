@@ -11,11 +11,13 @@ import (
 	"thinkzone/logs"
 )
 
+// Errore nel login
 type ErrorLogin struct {
 	message       string
 	clientAddress net.Addr
 }
 
+// Crea l'errore del login
 func NewErrorLogin(client *Client, message string) *ErrorLogin {
 	err := new(ErrorLogin)
 	err.message = message
@@ -23,15 +25,19 @@ func NewErrorLogin(client *Client, message string) *ErrorLogin {
 	return err
 }
 
+// Trasforma l'errore in stringa
 func (err ErrorLogin) Error() string {
 	return "Login Error from: " + err.clientAddress.String() + "\nMessaggio: " + err.message
 }
 
+// gestisce la disconnessione del client
 func (client *Client) gestisciDisconnessione(conv *database.Conversation) {
 	conv.UserDisconnection(client.user) //TODO conv prendila direttamente dal client
 }
 
-func gestisciClient(conn net.Conn) (*Client, func(chan *Client)) {
+// Inizializza la struttura dati del client e crea la funzione per gestire il client
+// (da partire come goroutine)
+func GestisciClient(conn net.Conn) (*Client, func(chan *Client)) {
 	fmt.Print("Nuova connessione: ")
 	fmt.Println(conn.RemoteAddr())
 
@@ -63,6 +69,10 @@ func gestisciClient(conn net.Conn) (*Client, func(chan *Client)) {
 	}
 }
 
+// Inizializza la struttura dai del client e ne gestisce l'handshake prima di ritornare
+//
+// Ritorna nil se l'handshake non ha avuto successo
+//TODO ritornare anche un errore 
 func NewClient(conn *net.Conn) *Client {
 	var client *Client = new(Client)
 	client.conn = conn
@@ -77,6 +87,7 @@ func NewClient(conn *net.Conn) *Client {
 	return client
 }
 
+// Svolge l'handshake con il client. Ritorna true se l'handshake ha avuto successo
 func (client *Client) handshake() bool {
 
 	keepAlive, err := client.leggiEseguiComando()
@@ -102,13 +113,19 @@ func (client *Client) handshake() bool {
 	client.stream.WriteRune('\\')
 
 	//TODO spedisci lo stato attuale della conversazione
-	client.stream.WriteString(database.MainConv.TotalConversation())
+	client.stream.WriteString(database.MainConv.GetComplete(false))
 
 	client.stream.Flush()
 	return true
 }
 
-//ritorna true se la connessione deve rimanere aperta
+// Da chiamare subito successivamente all'handshake (propriamente viene chiamato
+// all'interno della handshake() stessa) e svolge l'azione richiesta dal client.
+//
+// Azioni disponibili: Registrazione e Login
+//
+// Ritorna true se la connessione deve rimanere aperta
+//TODO ritorna invece l'azione da eseguire sul client come funzione
 func (client *Client) leggiEseguiComando() (bool, error) {
 	s, err := client.stream.ReadString('\\')
 	if err != nil {
@@ -138,6 +155,7 @@ func (client *Client) leggiEseguiComando() (bool, error) {
 	return false, NewErrorLogin(client, "boh...")
 }
 
+// Registra l'utente nel server come nuovo utente
 func (client *Client) registrati() error {
 	logs.Log("registrazione nuovo utente")
 	username, err := client.stream.ReadString('\\')
@@ -165,6 +183,7 @@ func (client *Client) registrati() error {
 	return nil
 }
 
+// Esegue il login del client (registra lo stato online
 func (client *Client) login() error {
 	logs.Log("login nuovo utente")
 	username, err := client.stream.ReadString('\\')
