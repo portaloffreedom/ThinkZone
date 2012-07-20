@@ -8,47 +8,51 @@ import (
 	"hash"
 )
 
+// Struttura dati che memorizza i dati dell'utente
 type User struct {
-	ID       int
-	Username string
-	password hash.Hash
+	ID       int       // Codice intero univoco identificativo dell'utente
+	Username string    // Username
+	password hash.Hash // Hash della password vera
 }
 
-type databaseRegistration struct {
-	UserNameToId map[string]*User
-	UserIDtoUser map[int]*User
-	contatore    int //sostituire con lista degli id non usati
+// Struttura dati core del dababase: tiene memorizzati tutti gli utenti
+type DatabaseRegistration struct {
+	userNameToId map[string]*User // mappa di tutti gli utente per username
+	userIDtoUser map[int]*User    // mappa di tutti gli utenti per ID
+	contatore    int              // sostituire con lista degli id non usati
 }
 
+// variabili globali per il funzionamento del Database
 var (
-	ServerFakeUser User                 = User{42, "server", sha256.New()}
-	MainConv       *Conversation        = NewConversation(&ServerFakeUser)
-	Data           databaseRegistration = databaseRegistration{make(map[string]*User), make(map[int]*User), 0}
+	//Utente fake che rappresenta il server
+	ServerFakeUser User = User{42, "server", sha256.New()}
+	// Conversazione principale attiva (da eliminare quando vengono implementate
+	// più conversazioni per server
+	MainConv *Conversation = NewConversation(&ServerFakeUser)
+	// Database principale in cui vengono resgistrati tutti gli utenti
+	Data DatabaseRegistration = DatabaseRegistration{make(map[string]*User), make(map[int]*User), 0}
 )
 
-//this function assign an id to an username
-//return the id assigned
-//return false if the id already existed, true if a new one was assigned
-//TODO sostituire questa funzione con 2 diverse: login e createUser
-func (datab *databaseRegistration) ConnectUser(s string) (user *User, newuser bool) {
-	//user = datab.UserNameToId[s]
+// Questa funzione connette un nuovo utente al database (in pratica ne verifica 
+// solamente la già avvenuta registrazione) e ritorna il puntatore alla struttura
+// dati dell'utente con tutti i dati necessari (id e hash della password)
+func (datab *DatabaseRegistration) ConnectUser(s string) (user *User, newuser bool) {
+	//user = datab.userNameToId[s]
 	var present bool
 
-	if user, present = datab.UserNameToId[s]; !present {
-		newuser = true
-	} else {
-		newuser = false
-	}
+	user, present = datab.userNameToId[s]
+	newuser = !present
 
 	return
 
 }
 
-func (datab *databaseRegistration) RegisterNewUser(username, password string) (user *User, success bool) {
+// Questa funzione registra un nuovo utente nel database
+func (datab *DatabaseRegistration) RegisterNewUser(username, password string) (user *User, success bool) {
 
 	var present bool
 
-	if user, present = datab.UserNameToId[username]; !present {
+	if user, present = datab.userNameToId[username]; !present {
 		datab.contatore++
 		user = new(User)
 		user.ID = datab.contatore
@@ -57,8 +61,8 @@ func (datab *databaseRegistration) RegisterNewUser(username, password string) (u
 		hashpassword.Write([]byte(password))
 		user.password = hashpassword
 
-		datab.UserNameToId[username] = user
-		datab.UserIDtoUser[user.ID] = user
+		datab.userNameToId[username] = user
+		datab.userIDtoUser[user.ID] = user
 
 		success = true
 	} else {
@@ -70,14 +74,23 @@ func (datab *databaseRegistration) RegisterNewUser(username, password string) (u
 
 }
 
-func (datab *databaseRegistration) GetUserByName(s string) *User {
-	return datab.UserNameToId[s]
+// Trasforma il nome dell'utente nel puntatore alla sua struttura dati
+// (da per scontato che la struttura esista)
+func (datab *DatabaseRegistration) GetUserByName(s string) *User {
+	return datab.userNameToId[s]
 }
 
-func (datab *databaseRegistration) GetUserByID(id int) *User {
-	return datab.UserIDtoUser[id]
+// Trasforma l'id dell'utente nel puntatore alla sua struttura dati
+// (da per scontato che la struttura esista)
+func (datab *DatabaseRegistration) GetUserByID(id int) *User {
+	return datab.userIDtoUser[id]
 }
 
+// Verifica che la password dell'utente sia corretta rispetto a quella passata
+// come parametro (internamente le password sono trasformate, verificate
+// memorizzate come checksum)
+//
+// Ritorna true se la password è corretta
 func (user *User) VerifyPassword(passwordInput string) bool {
 	hashinput := sha256.New()
 	hashinput.Write([]byte(passwordInput))

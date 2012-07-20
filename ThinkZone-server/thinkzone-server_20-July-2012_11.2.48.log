@@ -1,0 +1,37 @@
+File di log del server di ThinkZone
+
+20-July-2012
+11.2.48: Server in ascolto su: ":4242"
+11.3.2: registrazione nuovo utente
+11.3.2: Registrato nuovo utente: glom password: goo
+11.3.3: login nuovo utente
+11.3.3: IP:127.0.0.1:34450 USERNAME:glom UserID:1
+11.3.3: Login riuscito di glom da 127.0.0.1:34450
+11.3.16: registrazione nuovo utente
+11.3.16: Registrato nuovo utente: porco password: dio
+11.3.17: login nuovo utente
+11.3.17: IP:192.168.0.11:43689 USERNAME:porco UserID:2
+11.3.17: Login riuscito di porco da 192.168.0.11:43689
+11.4.36: #ERROR# connessione interrotta: 192.168.0.11:43689
+		motivazione: EOF
+11.4.55: registrazione nuovo utente
+11.4.55: #ERROR# Login Error from: 192.168.0.11:43690
+	Messaggio: impossibile registrare nuovo utente
+11.5.17: login nuovo utente
+11.5.17: IP:192.168.0.11:43691 USERNAME:porco UserID:2
+11.5.17: Login riuscito di porco da 192.168.0.11:43691
+11.6.27: #ERROR# connessione interrotta: 127.0.0.1:34450
+		motivazione: EOF
+11.6.29: #ERROR# connessione interrotta: 192.168.0.11:43691
+		motivazione: EOF
+11.40.4: login nuovo utente
+11.40.4: #ERROR# Login Error from: 127.0.0.1:34530
+	Messaggio: connessione impossibile: Utente non registrato!
+11.40.8: #ERROR# Login Error from: 127.0.0.1:34531
+	Messaggio: Errore nel leggere
+		Motivazione: EOF
+11.40.19: registrazione nuovo utente
+11.40.19: Registrato nuovo utente: skdak password: aospkdasl
+11.40.20: login nuovo utente
+11.40.20: IP:127.0.0.1:34533 USERNAME:skdak UserID:3
+11.40.20: Login riuscito di skdak da 127.0.0.1:34533

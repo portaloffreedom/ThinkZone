@@ -15,6 +15,18 @@ import (
 //	"unsafe"
 )
 
+// Errore di traduzione dallo stream a un azione sensata
+type TranslationError struct {
+	s string
+}
+
+// Trasforma il TranslationError in una stringa
+func (err TranslationError) Error() string {
+	return err.s
+}
+
+// Struttura dati contente tutti i dati relativi ad un utente e allo
+// stato della sua connessione
 type Client struct {
 	//socket TCP
 	conn *net.Conn
@@ -32,6 +44,7 @@ type Client struct {
 	//TODO *database.Conversation
 }
 
+// Mangia un carattere dal canale e controlla che sia uguale al carattere c 
 func mangiaCarattereDiControllo(c rune, input chan rune) bool {
 	d := <-input
 	if c == d {
@@ -41,6 +54,10 @@ func mangiaCarattereDiControllo(c rune, input chan rune) bool {
 	return false
 }
 
+// Tenta di leggere una sequenza di caratteri dal canale trasformandoli
+// in un intero. L'ultimo carattere letto che non è una cifra (0-9) 
+// viene ritornato anch'esso per un controllo sulla coerenza della
+// comunicazione
 func mangiaIntero(input chan rune) (valore int, lastRead rune) {
 	buffer := make([]rune, 256, 256)
 	for i := 0; i < 32; i++ {
@@ -66,63 +83,143 @@ func mangiaIntero(input chan rune) (valore int, lastRead rune) {
 	return -1, 0
 }
 
-//this function should run as goroutine
-func gestisciTestoConversazione(input chan rune) {
+// Questa funzione entra in un ciclo e non vi esce finché il canale di input non
+// viene chiuso. Quello che fa è un parsing dei caratteri dal canale di input
+// controllando le azioni da svolgere e riversare (intelligentemente) sul canale
+// di output quello che deve essere spedito ai vari client. 
+//
+// This function should run as goroutine
+func gestisciTestoConversazione(input chan rune, output chan string) {
 	activeUser := database.Data.GetUserByID(0)
-	cursor := 0
-	for {
-		c := <-input
+	var errore error
+	var versoClient []rune
+	//	cursor := 0
+	for c := range input {
+		//		c := <-input
+		//		fmt.Println("input",string(c))
 		switch c {
 		case '\\': //caso di carattere di controllo
 			cc := <-input
+			//			fmt.Println("input",string(cc))
 			switch cc {
+			case 'K':
+				parent, cu := mangiaIntero(input)
+				if cu != '\\' {
+					errore = TranslationError{"ERRORE lettura stream: carattere di controllo mangiato != '\\'"}
+					break
+				}
+				var postRID int
+				postRID, errore = database.MainConv.Respond(parent, activeUser)
+				versoClient = []rune{'\\', 'K'}
+				versoClient = append(versoClient, ([]rune(strconv.Itoa(parent)))...)
+				versoClient = append(versoClient, '\\')
+				versoClient = append(versoClient, ([]rune(strconv.Itoa(postRID)))...)
+				versoClient = append(versoClient, '\\')
+			case 'P':
+				postCursor, cu := mangiaIntero(input)
+				if cu != '\\' {
+					errore = TranslationError{"ERRORE lettura stream: carattere di controllo mangiato != '\\'"}
+					break
+				}
+				errore = database.MainConv.ChangePost(activeUser, postCursor)
+				versoClient = []rune{'\\', cc}
+				versoClient = append(versoClient, ([]rune(strconv.Itoa(postCursor)))...)
+				versoClient = append(versoClient, '\\')
 			case 'C':
-				cursor, cc = mangiaIntero(input)
-				if cc != '\\' {
-					fmt.Println("ERRORE lettura stream: carattere di controllo mangiato non Intero")
+				cursor, cu := mangiaIntero(input)
+				if cu != '\\' {
+					errore = TranslationError{"ERRORE lettura stream: carattere di controllo mangiato != '\\'"}
+					break
 				}
+				errore = database.MainConv.ChangePos(activeUser, cursor)
+				versoClient = []rune{'\\', cc}
+				versoClient = append(versoClient, ([]rune(strconv.Itoa(cursor)))...)
+				versoClient = append(versoClient, '\\')
 			case 'D':
-				howmany, ccc := mangiaIntero(input)
-				if ccc != '\\' {
-					fmt.Println("ERRORE lettura stream: carattere di controllo mangiato non Intero")
+				howmany, cu := mangiaIntero(input)
+				if cu != '\\' {
+					errore = TranslationError{"ERRORE lettura stream: carattere di controllo mangiato != '\\'"}
+					break
 				}
-				cursor -= howmany
-				//TODO rimuovi testo
-				database.MainConv.TestaPost.Text(activeUser).DelElem(cursor, howmany)
+				versoClient = []rune{'\\', cc}
+				versoClient = append(versoClient, ([]rune(strconv.Itoa(howmany)))...)
+				versoClient = append(versoClient, '\\')
+				//cursor -= howmany
+				//database.MainConv.TestaPost.Text(activeUser).DelElem(cursor, howmany)
+				errore = database.MainConv.DelElem(activeUser, howmany)
 			case 'U':
-				newUserID, ccc := mangiaIntero(input)
-				if ccc != '\\' {
-					fmt.Println("ERRORE lettura stream: carattere di controllo mangiato non Intero")
+				newUserID, cu := mangiaIntero(input)
+				if cu != '\\' {
+					errore = TranslationError{"ERRORE lettura stream: carattere di controllo mangiato != '\\'"}
+					break
 				}
 				activeUser = database.Data.GetUserByID(newUserID)
+				versoClient = []rune{'\\', cc}
+				versoClient = append(versoClient, ([]rune(strconv.Itoa(newUserID)))...)
+				versoClient = append(versoClient, '\\')
 
 			case '\\':
-				database.MainConv.TestaPost.Text(activeUser).InsSingleElem('\\', cursor)
-				cursor++
+				//database.MainConv.TestaPost.Text(activeUser).InsSingleElem('\\', cursor)
+				errore = database.MainConv.InsElem(activeUser, []rune{'\\'})
+				versoClient = []rune{'\\'}
+				//cursor++
 
 			default:
 				fmt.Println("ERRORE azione", cc, "non disponibile")
 			}
 
+			if errore != nil {
+				logs.Error("errore nel lavorare sulla superstringa\n\tultimo comando: ", string(cc), "\n\tmotivo: ", errore.Error())
+				errore = nil
+			} else {
+//				for i := range versoClient {
+//					output <- versoClient[i]
+//				}
+				output <- string(versoClient)
+			}
+
 		default:
-			database.MainConv.TestaPost.Text(activeUser).InsSingleElem(c, cursor)
-			cursor++
+			//database.MainConv.TestaPost.Text(activeUser).InsSingleElem(c, cursor)
+			errore = database.MainConv.InsElem(activeUser, []rune{c})
+			output <- string(c)
+			//cursor++
 
 			//TODO anche qui si può pensare ad un flasher a tempo per minimizzare il lavoro su superstring
 		}
 
+		if errore != nil {
+			logs.Error("errore nel lavorare sulla superstringa\n\t ultimo carattere: ", string(c), "\n\tmotivo: ", errore.Error())
+			errore = nil
+		}
+
 		//		fmt.Println("---", database.MainConv.TestaPost.Text(activeUser).GetComplete(true), "---") //DEBUG
-		fmt.Println(database.MainConv.TestaPost.Text(activeUser).GetComplete(true)) //DEBUG
+		fmt.Println(database.MainConv.GetComplete(true)) //DEBUG
 
 	}
 }
 
+// Funzione che innesta tutta la procedura per il parsing di quello ricevuto
+// dai client.
+//TODO migliora la documentazione
 func flasher(codaCiclica *list.List, readiness chan *Client) {
-	tempoDaAspettare := 20 * time.Millisecond
+	tempoDaAspettare := 30 * time.Millisecond
 	var lastActiveUser int = -1
-	toSuperString := make(chan rune, 256)
+	input := make(chan rune, 256)
+	output := make(chan string, 256)
 
-	go gestisciTestoConversazione(toSuperString)
+	go gestisciTestoConversazione(input, output)
+
+	// semplice funzione che rispedisce tutto quello che passa
+	// dal canale di output sui socket delle connessioni
+	go func() {
+		for buffer := range output {
+			for e := codaCiclica.Front(); e != nil; e = e.Next() {
+				client := e.Value.(*Client)
+				client.stream.WriteString(buffer)
+				client.stream.Flush()
+			}
+		}
+	}()
 
 	for {
 		start := time.Now()
@@ -148,7 +245,7 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 			var err error
 			for i := chiSonoSSize; i < chiSonoSSize+daLeggere; i++ {
 				buffer[i], _, err = clientAttivo.stream.ReadRune()
-				toSuperString <- buffer[i]
+				//				toSuperString <- buffer[i]
 				if err != nil {
 					//TODO gestisci errore
 					fmt.Println("Errore nel leggere dalla rete")
@@ -163,12 +260,9 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 			for i := 0; i < chiSonoSSize; i++ {
 				buffer[i] = []rune(chiSonoString)[i]
 			}
-
 			//spedisci
-			for e := codaCiclica.Front(); e != nil; e = e.Next() {
-				client := e.Value.(*Client)
-				client.stream.WriteString(string(buffer))
-				client.stream.Flush()
+			for i := 0; i < len(buffer); i++ {
+				input <- buffer[i]
 			}
 		}
 
@@ -179,6 +273,10 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 	}
 }
 
+// Funzione che fa partire la routine per la gestione del parsing dei "comandi"
+// in arrivo dai client, svolge le azioni, rispedisce le risposte corrette.
+//
+// Inoltre spedisce i nuovi client nei client da gestire
 func spedisci(codaNewConn chan *Client, readiness chan *Client) {
 	codaCiclica := list.New()
 
@@ -186,12 +284,17 @@ func spedisci(codaNewConn chan *Client, readiness chan *Client) {
 
 	for nuovaConnessione := range codaNewConn {
 		codaCiclica.PushFront(nuovaConnessione)
+		//TODO sincronizzare questa parte visto che è eseguita contemporaneamte 
+		// da più goroutine
 	}
 }
 
-func StartServer(laddr string) {
-	ln, err := net.Listen("tcp", laddr)
-	logs.Log("Server in ascolto su: \"", laddr, "\"")
+// Inizializzare il server in ascolto per le Sincronizzazione delle conversazioni
+//
+// "laddress string" indica su quali indirizza ascoltare e su quale porta 
+func StartServer(laddress string) {
+	ln, err := net.Listen("tcp", laddress)
+	logs.Log("Server in ascolto su: \"", laddress, "\"")
 	if err != nil {
 		logs.Error("Errore nell'aprire la connessione: ", err.Error())
 		return
@@ -214,7 +317,7 @@ func StartServer(laddr string) {
 		}
 
 		go func() {
-			client, gestore := gestisciClient(conn)
+			client, gestore := GestisciClient(conn)
 			if client != nil {
 				go gestore(codaReadiness)
 				codaAccettazioni <- client

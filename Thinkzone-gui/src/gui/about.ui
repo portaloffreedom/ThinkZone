@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>799</width>
-    <height>641</height>
+    <width>803</width>
+    <height>659</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -91,6 +91,12 @@
            <property name="frameShadow">
             <enum>QFrame::Plain</enum>
            </property>
+           <property name="verticalScrollBarPolicy">
+            <enum>Qt::ScrollBarAlwaysOff</enum>
+           </property>
+           <property name="horizontalScrollBarPolicy">
+            <enum>Qt::ScrollBarAlwaysOff</enum>
+           </property>
            <property name="undoRedoEnabled">
             <bool>false</bool>
            </property>
@@ -106,6 +112,22 @@ p, li { white-space: pre-wrap; }
            </property>
            <property name="textInteractionFlags">
             <set>Qt::NoTextInteraction</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="labelVersion">
+           <property name="layoutDirection">
+            <enum>Qt::LeftToRight</enum>
+           </property>
+           <property name="text">
+            <string>Version</string>
+           </property>
+           <property name="textFormat">
+            <enum>Qt::LogText</enum>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
           </widget>
          </item>

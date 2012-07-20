@@ -1,52 +1,23 @@
-// database.post
 package database
 
 import (
 	"container/list"
-
-//	"crypto/sha256"
-
-//	"fmt"
 )
 
-type ConversationError struct {
-	errExplanation string
-	conv           *Conversation
-}
-
-func NewConversationError(errExplanation string, conv *Conversation) *ConversationError {
-	err := new(ConversationError)
-	err.errExplanation = errExplanation
-	err.conv = conv
-	return err
-}
-
-func (err *ConversationError) Error() string {
-	return "Errore nella conversazione: " + err.conv.Title + "\n" + err.errExplanation
-}
-
-type Conversation struct {
-	Title            string
-	ID_conversazione int
-
-	//totale_numero_post int
-	//privata	         bool
-
-	connected     map[int]*User
-	postMap       map[int]*Post
-	contatorePost int
-	TestaPost     *Post
-}
-
+// Struttura dati per la memorizzazione del singolo post
 type Post struct {
-	testo   *SuperString
-	idPost  int
-	writers *list.List //list of users
+	testo  *SuperString //testo contenuto nel post
+	idPost int          //Identificativo numerico intero univoco del post 
 
-	padre    *Post      //puntatore a cosa sto rispondendo
-	risposte *list.List //puntatore alle risposte
+	//lista di tutti gli utenti che hanno partecipato alla creazione di questo post
+	writers *list.List
+
+	padre              *Post //puntatore a cosa sto rispondendo
+	rispostaPrincipale *Post //puntatore al post risposta principale
+	rispostaSecondaria *Post //puntatore al post risposta secondaria
 }
 
+//Crea una nuova struttura dati Post con i valori inizializzati 
 func (conv *Conversation) NewPost(creator *User, padre *Post) *Post {
 	post := new(Post)
 
@@ -60,19 +31,36 @@ func (conv *Conversation) NewPost(creator *User, padre *Post) *Post {
 	return post
 }
 
-func (post *Post) Text(user *User) *SuperString {
+// accede al testo del post memorizzando se è stato aggiunto
+// un altro scrittore al post 
+func (post *Post) text(user *User) *SuperString {
 	post.addWriter(user)
 	return post.testo
 }
 
-func (conv *Conversation) TotalConversation() string {
-	return conv.TestaPost.testo.GetComplete(false)
+// aggiunge dei caratteri al testo del post
+func (post *Post) write(user *User, appendRunes []rune, pos int) {
+	post.text(user).InsElem(appendRunes, pos)
 }
 
-func (post *Post) Respond(conv *Conversation, user *User) *Post {
+// elimina dei caratteri al testo del post
+func (post *Post) del(user *User, pos int, howmany int) {
+	post.text(user).DelElem(pos, howmany)
+}
+
+// crea un post di risposta al post invocato (con la struttura dati già
+// inizializzata per bene)
+func (post *Post) Respond(conv *Conversation, user *User) (*Post, error) {
 	response := conv.NewPost(user, post)
-	post.risposte.PushBack(response)
-	return response
+	if post.rispostaPrincipale == nil {
+		post.rispostaPrincipale = response
+		return response, nil
+	}
+	if post.rispostaSecondaria == nil {
+		post.rispostaSecondaria = response
+		return response, nil
+	}
+	return nil, NewConversationError("Impossibile attaccare più di due risposte ad un solo post", conv)
 }
 
 //return false if the User was already a Writer of this post
@@ -86,42 +74,4 @@ func (post *Post) addWriter(writer *User) bool {
 
 	post.writers.PushBack(writer)
 	return true
-}
-
-func NewConversation(creator *User) *Conversation {
-	conv := new(Conversation)
-
-	//connected     map[int]*User
-	//postMap       map[int]*Post
-	conv.connected = make(map[int]*User)
-	conv.postMap = make(map[int]*Post)
-
-	conv.contatorePost = 1
-	conv.connected[creator.ID] = creator
-	conv.TestaPost = conv.NewPost(creator, nil)
-
-	return conv
-}
-
-func (conv *Conversation) NewUserConnection(user *User) *ConversationError {
-
-	if userold, ok := conv.connected[user.ID]; ok {
-		return NewConversationError("L'utente "+userold.Username+" è già connesso", conv)
-	} else {
-		conv.connected[user.ID] = user
-		return nil
-	}
-	return nil
-}
-
-func (conv *Conversation) UserDisconnection(user *User) {
-	delete(conv.connected, user.ID)
-}
-
-//create a post in response of the given post
-func (conv *Conversation) ResponseToPost(idPost int, user *User) *Post {
-	padre := conv.postMap[idPost]
-	risposta := padre.Respond(conv, user)
-
-	return risposta
 }

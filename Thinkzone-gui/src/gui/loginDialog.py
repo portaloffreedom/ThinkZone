@@ -1,42 +1,42 @@
 '''
-Created on 11/lug/2012
-Finestra principale che si occupa di connettere le componenti della GUI e i widget personalizzati.
+Dialog window per il login. Viene richiamato dalla finestra principale.
+Costruisce la finestra di login dalla classe di PyQt4
 @author: stengun
 '''
 import sys
 from utils import PostArea
-from rete import Comunicazione
-from gui import finestraprincipale,aboutDialog
-from PyQt4 import QtGui, QtCore, Qt
+from gui import login,aboutDialog
+from PyQt4 import QtGui, QtCore
 
-class FinestraPrincipale(QtGui.QMainWindow, finestraprincipale.Ui_finestraprincipale):
+class Login(QtGui.QDialog, login.Ui_Dialog):
     '''
     Classe per la finestra principale.
+    Eredita da login.Ui_Dialog. Costruisce e connette tutti i componenti della finestra
+    di login. Modificare questo file se si vuole aggiungere nuovi connettori o widget
+    particolari.
     '''
-    _textextended = None
     _connettore = None
-    _aboutwindow = None
+    _parent = None
+    
     def __init__(self, parent = None):
-        QtGui.QMainWindow.__init__(self, parent)
+        QtGui.QDialog.__init__(self, parent)
+        self._parent = parent
         self._textextended = PostArea.Post()
-        self.ui = finestraprincipale.Ui_finestraprincipale()
         self._aboutwindow = aboutDialog.aboutDial()
+        self._connettore = parent._connettore
         self.setupUi(self)
         self.serverBox.addItems(['Server personalizzato','localhost:4242','192.168.0.42:4242','portaloffreedom.is-a-geek.org:4242'])
+
         QtCore.QObject.connect(self.serverBox,QtCore.SIGNAL('currentIndexChanged(QString)'),self.cambioindici)
-        self.scroll_layout_2.addWidget(self._textextended)
-        self._connettore = Comunicazione.comunicatore()
-        QtCore.QObject.connect(self.actionAbout_Thinkzone,QtCore.SIGNAL('triggered()'),self._aboutwindow.show),
-        QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('rimozione(int,int)'),self._textextended.rimuoviTesto,2)
-        QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),self._textextended.aggiungiTesto,2)
         QtCore.QObject.connect(self.buttonConnect,QtCore.SIGNAL('pressed()'), self.connetti)
-        QtCore.QObject.connect(self._textextended,QtCore.SIGNAL('testoRimosso(int,int)'), self.dati_rimossi)
-        QtCore.QObject.connect(self._textextended,QtCore.SIGNAL('testoAggiunto(int,QString)'), self.dati_aggiunti)
         QtCore.QObject.connect(self.usernameEdit, QtCore.SIGNAL('textEdited(QString)'),self._abilitaLogin)
         QtCore.QObject.connect(self.passwordEdit, QtCore.SIGNAL('textEdited(QString)'),self._abilitaLogin)
         QtCore.QObject.connect(self.buttonRegister,QtCore.SIGNAL('pressed()'), self.registrati)
         
     def _abilitaLogin(self):
+        '''
+        Imposta attivato o disattivato i pulsanti per connettersi (o registrarsi)
+        '''
         pwdtext = self.passwordEdit.text()
         usertext = self.usernameEdit.text()
         if(pwdtext != '' and usertext != ''):
@@ -47,6 +47,9 @@ class FinestraPrincipale(QtGui.QMainWindow, finestraprincipale.Ui_finestraprinci
             self.buttonRegister.setEnabled(False)
     
     def cambioindici(self,elemento):
+        '''
+        Viene chiamata quando lo spinner per la selezione dei server cambia la sua selezione.
+        '''
         indes = elemento.find(':')
         host= elemento[:indes]
         porta = elemento[indes+1:]
@@ -58,14 +61,18 @@ class FinestraPrincipale(QtGui.QMainWindow, finestraprincipale.Ui_finestraprinci
             self.portaEdit.setText(porta)
             self.widget_hostname.setEnabled(False)
     
-    def dati_rimossi(self,posizione,rimossi):
-        #print('ci sono')
-        self._connettore.spedisci_rimozione(posizione,rimossi)
-    
-    def dati_aggiunti(self,posizione,aggiunti):
-        self._connettore.spedisci_aggiunta(posizione,aggiunti)
+#    def dati_rimossi(self,posizione,rimossi):
+#        #print('ci sono')
+#        self._connettore.spedisci_rimozione(posizione,rimossi)
+#    
+#    def dati_aggiunti(self,posizione,aggiunti):
+#        self._connettore.spedisci_aggiunta(posizione,aggiunti)
     
     def registrati(self):
+        '''
+        Metodo chiamato quando si preme il pulsante di registrazione a un server.
+        Invia nome utente e password inseriti come dati di registrazione.
+        '''
         hostname = self.hostEdit.text()
         nickname = self.usernameEdit.text()
         password = self.passwordEdit.text()
@@ -78,6 +85,9 @@ class FinestraPrincipale(QtGui.QMainWindow, finestraprincipale.Ui_finestraprinci
         self._connettore.registrati(hostname, porta, nickname, password)
     
     def connetti(self):
+        '''
+        Metodo chiamato quando si preme il pulsante di connessione.
+        '''
         porta = self.portaEdit.text()
         porta = porta.encode()
         hostname = self.hostEdit.text()
@@ -87,10 +97,5 @@ class FinestraPrincipale(QtGui.QMainWindow, finestraprincipale.Ui_finestraprinci
         porta = int(porta)
         self._connettore.connetti(hostname, porta,self.usernameEdit.text(),self.passwordEdit.text())
         self._connettore.start()
-
-        
-if __name__ == '__main__':
-    app = QtGui.QApplication(sys.argv)
-    finestra = FinestraPrincipale()
-    finestra.show()
-    app.exec()
+        self._parent._connettore = self._connettore
+        self.close()
