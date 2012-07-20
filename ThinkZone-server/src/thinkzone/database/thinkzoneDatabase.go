@@ -25,7 +25,7 @@ type DatabaseRegistration struct {
 // variabili globali per il funzionamento del Database
 var (
 	//Utente fake che rappresenta il server
-	ServerFakeUser User = User{42, "server", sha256.New()}
+	ServerFakeUser User = User{0, "server", sha256.New()}
 	// Conversazione principale attiva (da eliminare quando vengono implementate
 	// più conversazioni per server
 	MainConv *Conversation = NewConversation(&ServerFakeUser)

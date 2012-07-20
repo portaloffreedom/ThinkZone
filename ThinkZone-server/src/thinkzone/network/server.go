@@ -172,9 +172,9 @@ func gestisciTestoConversazione(input chan rune, output chan string) {
 				logs.Error("errore nel lavorare sulla superstringa\n\tultimo comando: ", string(cc), "\n\tmotivo: ", errore.Error())
 				errore = nil
 			} else {
-//				for i := range versoClient {
-//					output <- versoClient[i]
-//				}
+				//				for i := range versoClient {
+				//					output <- versoClient[i]
+				//				}
 				output <- string(versoClient)
 			}
 
@@ -233,6 +233,7 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 			if lastActiveUser != clientAttivo.user.ID {
 				chiSonoString = strings.Join([]string{"\\U", strconv.Itoa(clientAttivo.user.ID), "\\"}, "")
 				lastActiveUser = clientAttivo.user.ID
+				database.MainConv.UtenteAttivo = lastActiveUser
 			} else {
 				chiSonoString = ""
 			}
