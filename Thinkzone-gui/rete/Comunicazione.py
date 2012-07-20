@@ -22,6 +22,7 @@ class comunicatore(QtCore.QThread):
     _receive_thread = None
     _response = None
     _activePost = None
+    _barrier = None
     def __init__(self):
         QtCore.QThread.__init__(self)
         self._socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -130,6 +131,7 @@ class comunicatore(QtCore.QThread):
                 messaggio = self._controller(controllo, messaggio)
                 #self._activePost = idpost
                 self.emit(QtCore.SIGNAL('selectPost(int)'),idpost)
+                self._barrier.wait()
                 return False
             if(messaggio == 'K'):
                 print('caso Kreazione') #non sono un bimbominchia

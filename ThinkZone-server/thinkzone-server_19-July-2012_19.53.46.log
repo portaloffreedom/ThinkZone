@@ -1,0 +1,11 @@
+File di log del server di ThinkZone
+
+19-July-2012
+19.53.46: Server in ascolto su: ":4242"
+19.54.59: registrazione nuovo utente
+19.54.59: Registrato nuovo utente: aor password: aosk
+19.54.59: login nuovo utente
+19.54.59: IP:127.0.0.1:36161 USERNAME:aor UserID:1
+19.54.59: Login riuscito di aor da 127.0.0.1:36161
+19.55.21: #ERROR# connessione interrotta: 127.0.0.1:36161
+		motivazione: EOF

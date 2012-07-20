@@ -7,6 +7,7 @@ from gui import finestraprincipale,loginDialog,aboutDialog
 from PyQt4 import QtGui, QtCore
 from utils import PostWidget
 from rete import Comunicazione
+from threading import Barrier
 
 class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
     '''
@@ -19,6 +20,7 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
     _risposte = []
     _postids = {}
     #thread e altro
+    _barrier = None
     _connettore = Comunicazione.comunicatore()
     __VERSION__ = "0.0.7"
 
@@ -41,6 +43,8 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
         QtCore.QObject.connect(self.actionInformazioni_su,QtCore.SIGNAL("triggered()"),self._aboutDialog.show)
         QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('nuovoPost(int)'),self._creapost,2)
         QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('selectPost(int)'),self._selpost,2)
+        self._barrier = Barrier(2, timeout=200)
+        self._connettore._barrier = self._barrier
     
     def _inviaCreazione(self):
         '''
@@ -69,6 +73,7 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
                 self._deselectPost(self._connettore._activePost)
             self._selectPost(idpost)
             self._connettore._activePost = idpost
+        self._barrier.wait()
     
     def _creapost(self,idpost):
         '''

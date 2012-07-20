@@ -1,0 +1,18 @@
+File di log del server di ThinkZone
+
+19-July-2012
+19.58.10: Server in ascolto su: ":4242"
+19.58.18: registrazione nuovo utente
+19.58.18: Registrato nuovo utente: asd password: caz
+19.58.21: login nuovo utente
+19.58.21: IP:127.0.0.1:36168 USERNAME:asd UserID:1
+19.58.21: Login riuscito di asd da 127.0.0.1:36168
+19.58.55: registrazione nuovo utente
+19.58.55: Registrato nuovo utente: asdsad password: loac
+19.58.56: login nuovo utente
+19.58.56: IP:127.0.0.1:36171 USERNAME:asdsad UserID:2
+19.58.56: Login riuscito di asdsad da 127.0.0.1:36171
+20.2.9: #ERROR# connessione interrotta: 127.0.0.1:36168
+		motivazione: EOF
+20.2.9: #ERROR# connessione interrotta: 127.0.0.1:36171
+		motivazione: EOF
