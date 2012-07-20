@@ -138,6 +138,7 @@ class comunicatore(QtCore.QThread):
                 [parent,controllo] = self._recvInt()
                 [idpost,controllo] = self._recvInt()
                 self.emit(QtCore.SIGNAL('nuovoPost(int)'),idpost)
+                self._barrier.wait()
                 return False
             
         return True

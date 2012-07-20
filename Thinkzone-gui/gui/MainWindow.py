@@ -45,7 +45,6 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
         QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('selectPost(int)'),self._selpost,2)
         self._barrier = Barrier(2, timeout=200)
         self._connettore._barrier = self._barrier
-        #prova
     
     def _inviaCreazione(self):
         '''
@@ -69,11 +68,12 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
         QtCore.QObject.disconnect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),selezionato.aggiungiTesto)
         
     def _selpost(self,idpost):
-        if(self._connettore._activePost != idpost):
-            if(self._connettore._activePost != None):
-                self._deselectPost(self._connettore._activePost)
+        precedente = self._connettore._activePost
+        if(precedente != idpost):
+            if(precedente != None):
+                self._deselectPost(precedente)
             self._selectPost(idpost)
-            self._connettore._activePost = idpost
+        self._connettore._activePost = idpost
         self._barrier.wait()
     
     def _creapost(self,idpost):
@@ -91,7 +91,7 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
         self.layoutTextarea.addWidget(textArea)
         QtCore.QObject.connect(textArea,QtCore.SIGNAL('testoRimosso(int,int,int)'), self._connettore.spedisci_rimozione)
         QtCore.QObject.connect(textArea,QtCore.SIGNAL('testoAggiunto(int,QString,int)'), self._connettore.spedisci_aggiunta)
-            
+        self._barrier.wait()
         #print('Post selezionato:',idpost)
         #self._connettore._activePost = idpost
         
