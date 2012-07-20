@@ -57,7 +57,8 @@ func init() {
 
 	//parte per la gestione della chiusura del server
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
+	//signal.Notify(c, os.Interrupt)
+	signal.Notify(c)
 
 	go func(c chan os.Signal) {
 		sig := <-c
@@ -72,13 +73,13 @@ func init() {
 			fmt.Println("impossibile chiudere il file di log")
 		}
 		//		}
-		myself, err := os.FindProcess(os.Getpid())
+		/*myself, err := os.FindProcess(os.Getpid())
 		if err != nil {
 			fmt.Println("ma che cazz? non riesco a trovare me stesso?\n\tmotivo:", err)
 			return
 		}
 		myself.Signal(os.Kill) //TODO migliorare questa uscita
-
+		*/
 		return
 	}(c)
 }
@@ -87,9 +88,9 @@ func init() {
 // (i messaggi di errore saranno stampati a terminale comunque)
 func StampaSuTerminale(stampa bool) {
 	<-logFileLock
-	
+
 	stampa_su_terminale = stampa
-	
+
 	logFileLock <- 0
 }
 

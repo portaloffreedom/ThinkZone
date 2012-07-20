@@ -206,6 +206,10 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 	var lastActiveUser int = -1
 	input := make(chan rune, 256)
 	output := make(chan string, 256)
+	AggiungiAzioneDiChiusura(func() {
+		close(input)
+		close(output)
+	})
 
 	go gestisciTestoConversazione(input, output)
 
@@ -221,7 +225,13 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 		}
 	}()
 
-	for {
+	var spegniti bool = false
+
+	AggiungiAzioneDiChiusura(func() {
+		spegniti = true
+	})
+
+	for !spegniti {
 		start := time.Now()
 
 		quanti := len(readiness)
@@ -307,10 +317,21 @@ func StartServer(laddress string) {
 	//canale := make(chan byte, 256)
 	codaReadiness := make(chan *Client, 64)
 	codaAccettazioni := make(chan *Client, 64)
+	AggiungiAzioneDiChiusura(func() {
+		close(codaReadiness)
+		close(codaAccettazioni)
+	})
 
 	go spedisci(codaAccettazioni, codaReadiness)
 
-	for {
+	var spegniti bool = false
+
+	AggiungiAzioneDiChiusura(func() {
+		spegniti = true
+		ln.Close()
+	})
+
+	for !spegniti {
 		conn, err := ln.Accept()
 		if err != nil {
 			//TODO fare un pacchetto per la raccolta degli errori
