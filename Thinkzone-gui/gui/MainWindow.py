@@ -45,6 +45,7 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
         QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('selectPost(int)'),self._selpost,2)
         self._barrier = Barrier(2, timeout=200)
         self._connettore._barrier = self._barrier
+        #prova
     
     def _inviaCreazione(self):
         '''
