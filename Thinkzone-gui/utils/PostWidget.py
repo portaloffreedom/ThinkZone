@@ -11,6 +11,7 @@ class postWidget(QtGui.QWidget):
     '''
     Widget che crea l'oggetto "post", capace di essere un post normale o una risposta a un post.
     '''
+    _label = None
     _textArea = None
     _testoRimosso = QtCore.pyqtSignal(int,int,int,name='testoRimosso')
     _testoAggiunto = QtCore.pyqtSignal(int,str,int,name='testoAggiunto')
@@ -22,7 +23,9 @@ class postWidget(QtGui.QWidget):
         if(parent != None):
             spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
             self.horizontalLayout.addItem(spacerItem)
+        self._label.setText('id:'+str(self._idpost))
         self.horizontalLayout.addWidget(self._textArea)
+        self.horizontalLayout.addWidget(self._label)
         
     def emettiRimosso(self,posizione,rimossi):
         '''
@@ -58,6 +61,7 @@ class postWidget(QtGui.QWidget):
         Form.resize(363, 105)
         self.setMaximumSize(2096,150)
         self.setMinimumSize(0, 100)
+        self._label = QtGui.QLabel()
         self._textArea = PostArea.Post()
         self.horizontalLayout = QtGui.QHBoxLayout(Form)
         self.horizontalLayout.setSpacing(3)

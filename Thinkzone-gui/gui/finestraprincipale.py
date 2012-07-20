@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'conversations.ui'
 #
-# Created: Sun Jul 15 22:12:50 2012
+# Created: Fri Jul 20 17:18:09 2012
 #      by: PyQt4 UI code generator 4.9.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -93,6 +93,10 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.setObjectName(_fromUtf8("horizontalLayout_2"))
         spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout_2.addItem(spacerItem)
+        self.titoloLabel = QtGui.QLabel(self.dockWidgetContents_2)
+        self.titoloLabel.setText(_fromUtf8(""))
+        self.titoloLabel.setObjectName(_fromUtf8("titoloLabel"))
+        self.horizontalLayout_2.addWidget(self.titoloLabel)
         self.titoloEdit = QtGui.QLineEdit(self.dockWidgetContents_2)
         self.titoloEdit.setObjectName(_fromUtf8("titoloEdit"))
         self.horizontalLayout_2.addWidget(self.titoloEdit)

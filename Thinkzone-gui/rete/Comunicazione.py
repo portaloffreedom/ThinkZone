@@ -23,6 +23,7 @@ class comunicatore(QtCore.QThread):
     _response = None
     _activePost = None
     _barrier = None
+    _cursors = {}
     def __init__(self):
         QtCore.QThread.__init__(self)
         self._socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -46,9 +47,14 @@ class comunicatore(QtCore.QThread):
                 continue
             #print('messaggio',messaggio)
             if(self._parseinput(messaggio) and self._utenteAttivo != self._userID):
-                print('scrivo:',messaggio)
-                self.emit(QtCore.SIGNAL('aggiunta(int,QString)'),self.blink_cursor,messaggio)
-                self.blink_cursor += 1
+                print('scrivo:',messaggio,
+                      'per utente',self._utenteAttivo,
+                      'con cursore',self._cursors[self._utenteAttivo][0],
+                      'e post',self._cursors[self._utenteAttivo][1])
+                
+                self.emit(QtCore.SIGNAL('aggiunta(int,QString)'),self._cursors[self._utenteAttivo][0],messaggio)
+                self._cursors[self._utenteAttivo] = (self._cursors[self._utenteAttivo][0]+1,self._cursors[self._utenteAttivo][1])
+                
         try:
             self.disconnetti()
         except:
@@ -88,35 +94,48 @@ class comunicatore(QtCore.QThread):
         controllo = '\00'
         
         if(messaggio == '\\'): # selezione comando
-            print('caso 1')
+            #print('caso 1')
             messaggio = self._messaggi.get(True,None)
             #print('comando:',messaggio)
             if(messaggio == '\\'): #non è un comando.
                 return True
+            
             if(messaggio == 'C'): #Modifica cursore
                 print('caso C')
                 [self.blink_cursor, controllo] = self._recvInt()
+                print('cursore ',self.blink_cursor)
+                self._cursors[self._utenteAttivo] = (self.blink_cursor,self._activePost)
                 messaggio = self._controller(controllo, messaggio)
                 return False
+            
             if(messaggio == 'D'): # Eliminazione
                 print('caso D')
                 [quantita, controllo] = self._recvInt()
                 self.blink_cursor -= quantita
+                self._cursors[self._utenteAttivo] = (self.blink_cursor,self._activePost)
                 messaggio = self._controller(controllo, messaggio)
                 if(messaggio == None):
                     return False
                 else:
                     if(self._utenteAttivo != self._userID):
-                        self.emit(QtCore.SIGNAL('rimozione(int,int)'),self.blink_cursor,quantita)   
+                        self.emit(QtCore.SIGNAL('rimozione(int,int)'),self._cursors[self._utenteAttivo][0],quantita)   
                 return False
+            
             if(messaggio== 'U'): # Selezione utente
                 #print('caso U')
                 [self._utenteAttivo,controllo] = self._recvInt()
                 print('utente attivo',self._utenteAttivo)
-                if(self._utenteAttivo != self._userID):
-                    self.cursore_locale = self.blink_cursor
+                try:
+                    self._cursors[self._utenteAttivo]
+                except:
+                    print('Warning: utente nuovo',file=sys.stderr)
+                    self._cursors[self._utenteAttivo] = (0,0)
+
+                #if(self._utenteAttivo != self._userID):
+                #    self.cursore_locale = self.blink_cursor
                 messaggio = self._controller(controllo, messaggio)
                 return False
+            
             if(messaggio =='R'): #Risposta a una azione
                 #print('Caso Response')
                 [self._response,controllo] = self._recvInt()
@@ -124,15 +143,25 @@ class comunicatore(QtCore.QThread):
                 messaggio = self._controller(controllo, messaggio)
                 #print(controllo)
                 return False
+            
             if(messaggio == 'P'):#creazione post
                 print('caso POST')
                 [idpost,controllo] = self._recvInt()
                 #print('idPost',idpost)
                 messaggio = self._controller(controllo, messaggio)
                 #self._activePost = idpost
+                actu = 0
+                try:
+                    temp = self._cursors[self._utenteAttivo]
+                    if(temp[1] == idpost):
+                        actu = temp[0]
+                finally:
+                    self._cursors[self._utenteAttivo] = (actu,idpost)
+                    
                 self.emit(QtCore.SIGNAL('selectPost(int)'),idpost)
                 self._barrier.wait()
                 return False
+            
             if(messaggio == 'K'):
                 print('caso Kreazione') #non sono un bimbominchia
                 [parent,controllo] = self._recvInt()
@@ -192,6 +221,7 @@ class comunicatore(QtCore.QThread):
             sys.exit()
         print('il tuo ID',self._userID)
         print(controllo)
+        self._cursors[self._userID] = (0,0)
         
     def _parseResponse(self,response):
         '''
@@ -227,28 +257,34 @@ class comunicatore(QtCore.QThread):
         Spedisce al server una aggiunta di testo su uno specifico post e da una specifica posizione.
         '''
         #dati = dati.encode()
-        if(self._activePost != idpost):
+        print('posizione attuale',self._cursors[self._utenteAttivo][0])
+        print('posizione da cui partire',posizione)
+        print('posizione da aggiungere',len(dati))
+        
+        if(self._cursors[self._utenteAttivo][1] != idpost):
             self._spedisci('\P'+str(idpost)+'\\')
-            self._activePost = idpost
-            
-        if(posizione != self._posizione):
+            #self._cursors[self._utenteAttivo] = (self._cursors[self._utenteAttivo][0],idpost)
+
+        if(self._cursors[self._utenteAttivo][0] != posizione):
             self._spedisci('\C'+str(posizione)+'\\')
+            #self._cursors[self._utenteAttivo] = (self._cursors[self._utenteAttivo][0]+len(dati),idpost)
         self._spedisci(dati)
-        self._posizione = posizione+1
+        self._cursors[self._utenteAttivo] = (posizione+len(dati),idpost)
+        print('posizione finale',self._cursors[self._utenteAttivo][0])
         
     def spedisci_rimozione(self,posizione,rimossi,idpost):
         '''
         Spedisce al server una segnalazione di rimozione testo, con puntatore e numero di
         caratteri che sono stati rimossi.
         '''
-        if(self._activePost != idpost):
+        if(self._cursors[self._utenteAttivo][1] != idpost):
             self._spedisci('\P'+str(idpost)+'\\')
-            self._activePost = idpost
+            self._cursors[self._utenteAttivo] = (self._cursors[self._utenteAttivo][0],idpost)
         posizione += rimossi
-        if(posizione != self._posizione):
+        if(posizione != self._cursors[self._utenteAttivo][0]):
             self._spedisci('\C'+str(posizione)+'\\')
         self._spedisci('\D'+str(rimossi)+'\\')
-        self._posizione = posizione-1
+        self._cursors[self._utenteAttivo] = (posizione,idpost)
         
 class Receiver(QtCore.QThread):
     '''
