@@ -73,16 +73,19 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
         print('deselezionato il post '+str(idpost))
         
     def _selpost(self,idpost):
+        
         if(idpost !=0):
             precedente = self._connettore._activePost
             if(precedente != idpost):
-                if (precedente == 0):
-                    self.titoloLabel.setText('Titolo: '+self.titoloLabel.text())
+                if(precedente == 0):
+                    #self.titoloLabel.setText('Titolo: '+self.titoloLabel.text())
                     QtCore.QObject.disconnect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),self._setTitolo)
+                    self._connettore._activePost = None
                 else:
                     if(precedente != None):
                         self._deselectPost(precedente)
-                    self._selectPost(idpost)
+                    
+                self._selectPost(idpost)
                 self._connettore._activePost = idpost
         else:
             print('connesso titolo')
@@ -98,6 +101,10 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
         '''
         Parsing degli ID dei post. Crea nuovi post, seleziona post precedenti e dice quando non esistono.
         '''
+        if(self._connettore._activePost == 0):
+            self.titoloLabel.setText('Titolo: '+self.titoloLabel.text())
+            QtCore.QObject.disconnect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),self._setTitolo)
+            
         if(idpost == 0):
             #return
             idpost +=1
