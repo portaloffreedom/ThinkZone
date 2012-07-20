@@ -17,7 +17,7 @@ class comunicatore(QtCore.QThread):
     _messaggi = None
     _stop = None
     blink_cursor = None
-    _utenteAttivo = None
+    _utenteAttivo = 0
     _userID = None
     _receive_thread = None
     _response = None
@@ -33,9 +33,11 @@ class comunicatore(QtCore.QThread):
         _aggiunta = QtCore.pyqtSignal(int,str,name='aggiunta')
         _nuovopost = QtCore.pyqtSignal(int,name='nuovoPost')
         _selpost = QtCore.pyqtSignal(int,name='selectPost')
+        _nuovutente = QtCore.pyqtSignal(int,int,name='cambiaUtente')
         self.blink_cursor = 0
         
     def run(self):
+        self._cursors[0] = (0,0)
         while(not(self._stop)):
             try:
                 messaggio = self._messaggi.get(True, None)
@@ -103,16 +105,17 @@ class comunicatore(QtCore.QThread):
             if(messaggio == 'C'): #Modifica cursore
                 print('caso C')
                 [self.blink_cursor, controllo] = self._recvInt()
-                print('cursore ',self.blink_cursor)
-                self._cursors[self._utenteAttivo] = (self.blink_cursor,self._activePost)
+                if(self._userID != self._utenteAttivo):
+                    print('cursore ',self.blink_cursor)
+                    self._cursors[self._utenteAttivo] = (self.blink_cursor,self._activePost)
                 messaggio = self._controller(controllo, messaggio)
                 return False
             
             if(messaggio == 'D'): # Eliminazione
                 print('caso D')
                 [quantita, controllo] = self._recvInt()
-                self.blink_cursor -= quantita
-                self._cursors[self._utenteAttivo] = (self.blink_cursor,self._activePost)
+                self._cursors[self._utenteAttivo] = ((self._cursors[self._utenteAttivo][0] - quantita),self._activePost)
+                #self._cursors[self._utenteAttivo] = (self.blink_cursor,self._activePost)
                 messaggio = self._controller(controllo, messaggio)
                 if(messaggio == None):
                     return False
@@ -123,6 +126,7 @@ class comunicatore(QtCore.QThread):
             
             if(messaggio== 'U'): # Selezione utente
                 #print('caso U')
+                prece = self._utenteAttivo
                 [self._utenteAttivo,controllo] = self._recvInt()
                 print('utente attivo',self._utenteAttivo)
                 try:
@@ -133,6 +137,9 @@ class comunicatore(QtCore.QThread):
 
                 #if(self._utenteAttivo != self._userID):
                 #    self.cursore_locale = self.blink_cursor
+                #if(prece != None):
+                #    self.emit(QtCore.SIGNAL('cambiaUtente(int,int)'),prece,self._activePost)
+                #    self._barrier.wait()
                 messaggio = self._controller(controllo, messaggio)
                 return False
             
@@ -149,15 +156,14 @@ class comunicatore(QtCore.QThread):
                 [idpost,controllo] = self._recvInt()
                 #print('idPost',idpost)
                 messaggio = self._controller(controllo, messaggio)
-                #self._activePost = idpost
+                self._activePost = idpost
                 actu = 0
-                try:
-                    temp = self._cursors[self._utenteAttivo]
-                    if(temp[1] == idpost):
-                        actu = temp[0]
-                finally:
-                    self._cursors[self._utenteAttivo] = (actu,idpost)
-                    
+#                try:
+#                    temp = self._cursors[self._utenteAttivo]
+#                    if(temp[1] == idpost):
+#                        actu = temp[0]
+#                finally:
+#                    self._cursors[self._utenteAttivo] = (actu,idpost)
                 self.emit(QtCore.SIGNAL('selectPost(int)'),idpost)
                 self._barrier.wait()
                 return False
@@ -257,34 +263,35 @@ class comunicatore(QtCore.QThread):
         Spedisce al server una aggiunta di testo su uno specifico post e da una specifica posizione.
         '''
         #dati = dati.encode()
-        print('posizione attuale',self._cursors[self._utenteAttivo][0])
-        print('posizione da cui partire',posizione)
-        print('posizione da aggiungere',len(dati))
-        
-        if(self._cursors[self._utenteAttivo][1] != idpost):
+        #self._spedisci('\00')
+#        print('posizione attuale',self._cursors[self._userID][0])
+#        print('posizione da cui partire',posizione)
+#        print('posizione da aggiungere',len(dati))
+#        
+        if(self._cursors[self._userID][1] != idpost):
             self._spedisci('\P'+str(idpost)+'\\')
             #self._cursors[self._utenteAttivo] = (self._cursors[self._utenteAttivo][0],idpost)
 
-        if(self._cursors[self._utenteAttivo][0] != posizione):
+        if(self._cursors[self._userID][0] != posizione):
             self._spedisci('\C'+str(posizione)+'\\')
             #self._cursors[self._utenteAttivo] = (self._cursors[self._utenteAttivo][0]+len(dati),idpost)
         self._spedisci(dati)
-        self._cursors[self._utenteAttivo] = (posizione+len(dati),idpost)
-        print('posizione finale',self._cursors[self._utenteAttivo][0])
+        self._cursors[self._userID] = (posizione+len(dati),idpost)
+        print('posizione finale',self._cursors[self._userID][0])
         
     def spedisci_rimozione(self,posizione,rimossi,idpost):
         '''
         Spedisce al server una segnalazione di rimozione testo, con puntatore e numero di
         caratteri che sono stati rimossi.
         '''
-        if(self._cursors[self._utenteAttivo][1] != idpost):
+        if(self._cursors[self._userID][1] != idpost):
             self._spedisci('\P'+str(idpost)+'\\')
-            self._cursors[self._utenteAttivo] = (self._cursors[self._utenteAttivo][0],idpost)
+            self._cursors[self._userID] = (self._cursors[self._userID][0],idpost)
         posizione += rimossi
-        if(posizione != self._cursors[self._utenteAttivo][0]):
+        if(posizione != self._cursors[self._userID][0]):
             self._spedisci('\C'+str(posizione)+'\\')
         self._spedisci('\D'+str(rimossi)+'\\')
-        self._cursors[self._utenteAttivo] = (posizione,idpost)
+        self._cursors[self._userID] = (posizione-1,idpost)
         
 class Receiver(QtCore.QThread):
     '''

@@ -16,6 +16,7 @@ class postWidget(QtGui.QWidget):
     _testoRimosso = QtCore.pyqtSignal(int,int,int,name='testoRimosso')
     _testoAggiunto = QtCore.pyqtSignal(int,str,int,name='testoAggiunto')
     _idpost = None
+    _selected = False
     def __init__(self,idpost,parent = None):
         QtGui.QWidget.__init__(self)
         self.setupUi(self)

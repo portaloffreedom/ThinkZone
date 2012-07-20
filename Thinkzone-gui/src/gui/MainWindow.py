@@ -21,6 +21,7 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
     _postids = {}
     #thread e altro
     _barrier = None
+    _settato = False
     _connettore = Comunicazione.comunicatore()
     __VERSION__ = "0.0.7"
 
@@ -43,6 +44,7 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
         QtCore.QObject.connect(self.actionInformazioni_su,QtCore.SIGNAL("triggered()"),self._aboutDialog.show)
         QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('nuovoPost(int)'),self._creapost,2)
         QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('selectPost(int)'),self._selpost,2)
+        QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('cambiaUtente(int,int)'),self._cambiautente,2)
         self._barrier = Barrier(2, timeout=200)
         self._connettore._barrier = self._barrier
     
@@ -50,7 +52,7 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
         '''
         Crea nella finestra un nuovo post.
         '''
-        atti = self._connettore._activePost
+        atti = self._connettore._cursors[self._connettore._utenteAttivo][1]
         if(atti == None):
             atti = 0
         if(atti == 0):
@@ -62,35 +64,45 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
     
     def _selectPost(self,idpost):
         selezionato = self._postids[idpost]
-        QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('rimozione(int,int)'),selezionato.rimuoviTesto,2)
-        QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),selezionato.aggiungiTesto,2)
-        print('selezionato il post '+str(idpost))
+        if(not(selezionato._selected)):
+            selezionato._selected = True
+            QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('rimozione(int,int)'),selezionato.rimuoviTesto,2)
+            QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),selezionato.aggiungiTesto,2)
+            print('selezionato il post '+str(idpost))
     
     def _deselectPost(self,idpost):
+        if(idpost == 0):
+            QtCore.QObject.disconnect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),self._setTitolo)
+            return
         selezionato = self._postids[idpost]
-        QtCore.QObject.disconnect(self._connettore,QtCore.SIGNAL('rimozione(int,int)'),selezionato.rimuoviTesto)
-        QtCore.QObject.disconnect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),selezionato.aggiungiTesto)
-        print('deselezionato il post '+str(idpost))
-        
+        if(selezionato._selected):
+            selezionato._selected = False
+            QtCore.QObject.disconnect(self._connettore,QtCore.SIGNAL('rimozione(int,int)'),selezionato.rimuoviTesto)
+            QtCore.QObject.disconnect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),selezionato.aggiungiTesto)
+            print('deselezionato il post '+str(idpost))
+    
+    def _cambiautente(self,precedente,attuale):
+        print('CAMBIO UTENTE')
+        if(precedente == 0):
+            #self.titoloLabel.setText('Titolo: '+self.titoloLabel.text())
+            QtCore.QObject.disconnect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),self._setTitolo)
+            #self._connettore._activePost = None
+        self._barrier.wait()
+    
     def _selpost(self,idpost):
-        
+        #if(self._connettore._cursors[self._connettore._utenteAttivo][1] != idpost):
         if(idpost !=0):
-            precedente = self._connettore._activePost
-            if(precedente != idpost):
-                if(precedente == 0):
-                    #self.titoloLabel.setText('Titolo: '+self.titoloLabel.text())
-                    QtCore.QObject.disconnect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),self._setTitolo)
-                    self._connettore._activePost = None
-                else:
-                    if(precedente != None):
-                        self._deselectPost(precedente)
-                    
-                self._selectPost(idpost)
-                self._connettore._activePost = idpost
+            precedente = self._connettore._cursors[self._connettore._utenteAttivo][1]
+            if(precedente != None):
+                self._deselectPost(precedente)
+            self._selectPost(idpost)
         else:
-            print('connesso titolo')
-            QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),self._setTitolo,2)
-            self._connettore._activePost = idpost
+            if(not(self._settato)):
+                print('connesso titolo')
+                QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),self._setTitolo,2)
+                self._settato = True
+        self._connettore._cursors[self._connettore._utenteAttivo] = (self._connettore._cursors[self._connettore._utenteAttivo][0],idpost)
+        
         self._barrier.wait()
     
     def _setTitolo(self,indi,stringa):
@@ -100,11 +112,10 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
     def _creapost(self,idpost):
         '''
         Parsing degli ID dei post. Crea nuovi post, seleziona post precedenti e dice quando non esistono.
-        '''
-        if(self._connettore._activePost == 0):
-            self.titoloLabel.setText('Titolo: '+self.titoloLabel.text())
+        '''          
+        if(self._connettore._cursors[self._connettore._utenteAttivo][1] == 0):
+            print('CREO POST E TOLGO IL TITOLO')
             QtCore.QObject.disconnect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),self._setTitolo)
-            
         if(idpost == 0):
             #return
             idpost +=1
