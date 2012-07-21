@@ -158,4 +158,4 @@ class Ui_MainWindow(object):
         self.actionLista_conversazioni.setText(QtGui.QApplication.translate("MainWindow", "Lista conversazioni", None, QtGui.QApplication.UnicodeUTF8))
         self.actionStrumenti_conversazione.setText(QtGui.QApplication.translate("MainWindow", "Strumenti conversazione", None, QtGui.QApplication.UnicodeUTF8))
 
-import immagini_rc
+from gui import immagini_rc

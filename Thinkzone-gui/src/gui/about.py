@@ -98,4 +98,4 @@ class Ui_Dialog(object):
         self.labelVersion.setText(QtGui.QApplication.translate("Dialog", "Version", None, QtGui.QApplication.UnicodeUTF8))
         self.buttonChiudi.setText(QtGui.QApplication.translate("Dialog", "Chiudi", None, QtGui.QApplication.UnicodeUTF8))
 
-import immagini_rc
+from gui import immagini_rc

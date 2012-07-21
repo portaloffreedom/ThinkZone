@@ -1,0 +1,19 @@
+File di log del server di ThinkZone
+
+21-July-2012
+2.1.29: Server in ascolto su: ":80"
+2.34.58: registrazione nuovo utente
+2.34.58: Registrato nuovo utente: roberto password: carlos
+2.35.0: login nuovo utente
+2.35.0: IP:127.0.0.1:50528 USERNAME:roberto UserID:1
+2.35.0: Login riuscito di roberto da 127.0.0.1:50528
+2.42.48: login nuovo utente
+2.42.52: #ERROR# Login Error from: 79.2.118.29:61085
+	Messaggio: connessione impossibile: Utente non registrato!
+2.44.59: registrazione nuovo utente
+2.44.59: Registrato nuovo utente: FrancescoMaltese password: Gentiluomodifortuna8
+2.45.4: login nuovo utente
+2.45.5: IP:79.2.118.29:61117 USERNAME:FrancescoMaltese UserID:2
+2.45.5: Login riuscito di FrancescoMaltese da 79.2.118.29:61117
+2.52.26: #ERROR# Cercando di eliminare fuori dalla stringa, l'eliminazione verrà ignorata
+2.52.26: #ERROR# Cercando di eliminare fuori dalla stringa, l'eliminazione verrà ignorata
