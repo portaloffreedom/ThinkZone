@@ -1,11 +1,9 @@
-package network
+package logs
 
 import (
 	"container/list"
-	"fmt"
 	"os"
 	"os/signal"
-	"thinkzone/logs"
 )
 
 var (
@@ -15,22 +13,26 @@ var (
 func init() {
 	azioniDiChiusura = list.New()
 	c := make(chan os.Signal, 1)
-	signal.Notify(c)
+	signal.Notify(c, os.Kill, os.Interrupt)
 
-	AggiungiAzioneDiChiusura(func() {
-		fmt.Println("porco diooooooooooooooooooooooo")
-	})
+	//	AggiungiAzioneDiChiusura(func() {
+	//		fmt.Println("porco diooooooooooooooooooooooo")
+	//	})
 
 	go func(c chan os.Signal) {
 		sig := <-c
 
-		logs.Log("\nsegnale catturato dal modulo server: ", sig.String())
+		Log("segnale catturato dal modulo server: ", sig.String())
+		Log("#### Chisura in corso ####")
 
 		for fun := azioniDiChiusura.Front(); fun != nil; fun = fun.Next() {
 			//svolgi tutte le azioni di chiusura
 			fun.Value.(func())()
 		}
 		close(c)
+		
+		Log("#### Operazioni di chiusura completate ####")
+		ChiudiLog() //chiude il file di log
 		return
 	}(c)
 }

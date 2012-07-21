@@ -206,7 +206,7 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 	var lastActiveUser int = -1
 	input := make(chan rune, 256)
 	output := make(chan string, 256)
-	AggiungiAzioneDiChiusura(func() {
+	logs.AggiungiAzioneDiChiusura(func() {
 		close(input)
 		close(output)
 	})
@@ -227,7 +227,7 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 
 	var spegniti bool = false
 
-	AggiungiAzioneDiChiusura(func() {
+	logs.AggiungiAzioneDiChiusura(func() {
 		spegniti = true
 	})
 
@@ -312,12 +312,12 @@ func StartServer(laddress string) {
 		//TODO handle error
 	}
 
-	database.MainConv = database.NewConversation(&database.ServerFakeUser)
+	database.MainConv = database.NewConversation(database.ServerFakeUser)
 
 	//canale := make(chan byte, 256)
 	codaReadiness := make(chan *Client, 64)
 	codaAccettazioni := make(chan *Client, 64)
-	AggiungiAzioneDiChiusura(func() {
+	logs.AggiungiAzioneDiChiusura(func() {
 		close(codaReadiness)
 		close(codaAccettazioni)
 	})
@@ -326,7 +326,7 @@ func StartServer(laddress string) {
 
 	var spegniti bool = false
 
-	AggiungiAzioneDiChiusura(func() {
+	logs.AggiungiAzioneDiChiusura(func() {
 		spegniti = true
 		ln.Close()
 	})

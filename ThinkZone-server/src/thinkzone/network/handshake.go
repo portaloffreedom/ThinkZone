@@ -50,13 +50,12 @@ func GestisciClient(conn net.Conn) (*Client, func(chan *Client)) {
 	return client, func(readiness chan *Client) {
 
 		var spegniti bool = false
-		
 
-		AggiungiAzioneDiChiusura(func() {
+		logs.AggiungiAzioneDiChiusura(func() {
 			spegniti = true
 		})
 
-		for !spegniti{
+		for !spegniti {
 			_, _, err := client.stream.ReadRune()
 			if err != nil {
 				logs.Error("connessione interrotta: ", conn.RemoteAddr().String(), "\n\tmotivazione: ", err.Error())
@@ -73,6 +72,8 @@ func GestisciClient(conn net.Conn) (*Client, func(chan *Client)) {
 			readiness <- client
 			<-client.blocco
 		}
+
+		(*client.conn).Close()
 	}
 }
 
