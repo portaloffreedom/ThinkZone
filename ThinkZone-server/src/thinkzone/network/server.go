@@ -248,28 +248,24 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 				chiSonoString = ""
 			}
 			chiSonoSSize := len(chiSonoString)
-			//fmt.Printf("dimensione di %s: %d\n", chiSonoString, chiSonoSSize)
 
 			//leggi cosa spedire
 			var daLeggere int = clientAttivo.stream.Reader.Buffered()
 			buffer := make([]rune, chiSonoSSize+daLeggere)
 			var err error
 			var size int
-			fmt.Println("Da leggere:",daLeggere," chiSonoSize:",chiSonoSSize, "buffersize:",len(buffer),":",cap(buffer))
-			for i,j := chiSonoSSize, 0; i < chiSonoSSize+daLeggere && j < daLeggere; i++ {
+			for i, j := chiSonoSSize, 0; i < chiSonoSSize+daLeggere && j < daLeggere; i++ {
 				buffer[i], size, err = clientAttivo.stream.ReadRune()
 				j += size
-				fmt.Printf("#####size:_%v_ carattere:_%v_%v_\n",strconv.Itoa(size),string(buffer[i]),buffer[i])
-				//				toSuperString <- buffer[i]
+				//fmt.Printf("#####size:_%v_ carattere:_%v_%v_\n",strconv.Itoa(size),string(buffer[i]),buffer[i])
 				if err != nil {
 					//TODO gestisci errore
-					fmt.Println("Errore nel leggere dalla rete")
+					logs.Error("Errore nel leggere dalla rete")
 					clientAttivo.blocco <- 1 //TODO dovresti chiudere il canale e tutto quanto
 					clientAttivo.gestisciDisconnessione(database.MainConv)
 					break
 				}
 			}
-			fmt.Println("####finito caratteri")
 			clientAttivo.blocco <- 0
 
 			//prepara il buffer da spedire
