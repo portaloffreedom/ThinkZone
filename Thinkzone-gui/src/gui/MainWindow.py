@@ -107,8 +107,8 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
         self._barrier.wait()
     
     def _selpost(self,idpost):
-        if(self._connettore._userID != self._connettore._utenteAttivo):
-            precedente = self._connettore._cursors[self._connettore._utenteAttivo][1]
+        precedente = self._connettore._lastPost
+        if(precedente != idpost):
             if(precedente != None):
                 self._deselectPost(precedente)
             self._selectPost(idpost)
