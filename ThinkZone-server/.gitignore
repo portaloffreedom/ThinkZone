@@ -4,4 +4,7 @@ bin/
 pkg/
 src/thinkzone/database/src/
 src/thinkzone/network/src/
+src/thinkzone/logs/src/
+src/thinkzone/database/*~
 *.log
+thinkzoneDATABASE.odb
