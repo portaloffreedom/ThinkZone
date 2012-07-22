@@ -35,7 +35,7 @@ class comunicatore(QtCore.QThread):
     _stop = None
     blink_cursor = None
     _registered = False
-    _utenteAttivo = 0
+    _utenteAttivo = None
     _userID = None
     _receive_thread = None
     _lastResponse = None

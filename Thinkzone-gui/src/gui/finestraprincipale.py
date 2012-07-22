@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'conversations.ui'
 #
-# Created: Fri Jul 20 17:18:09 2012
+# Created: Sun Jul 22 18:20:24 2012
 #      by: PyQt4 UI code generator 4.9.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -86,20 +86,24 @@ class Ui_MainWindow(object):
         self.dockLista.setWidget(self.dockWidgetContents)
         MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea(1), self.dockLista)
         self.dock_strumconv = QtGui.QDockWidget(MainWindow)
+        self.dock_strumconv.setMaximumSize(QtCore.QSize(524287, 200))
         self.dock_strumconv.setObjectName(_fromUtf8("dock_strumconv"))
         self.dockWidgetContents_2 = QtGui.QWidget()
         self.dockWidgetContents_2.setObjectName(_fromUtf8("dockWidgetContents_2"))
         self.horizontalLayout_2 = QtGui.QHBoxLayout(self.dockWidgetContents_2)
+        self.horizontalLayout_2.setSizeConstraint(QtGui.QLayout.SetMinimumSize)
         self.horizontalLayout_2.setObjectName(_fromUtf8("horizontalLayout_2"))
         spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout_2.addItem(spacerItem)
-        self.titoloLabel = QtGui.QLabel(self.dockWidgetContents_2)
-        self.titoloLabel.setText(_fromUtf8(""))
-        self.titoloLabel.setObjectName(_fromUtf8("titoloLabel"))
-        self.horizontalLayout_2.addWidget(self.titoloLabel)
-        self.titoloEdit = QtGui.QLineEdit(self.dockWidgetContents_2)
-        self.titoloEdit.setObjectName(_fromUtf8("titoloEdit"))
-        self.horizontalLayout_2.addWidget(self.titoloEdit)
+        self.widget = QtGui.QWidget(self.dockWidgetContents_2)
+        self.widget.setEnabled(False)
+        self.widget.setObjectName(_fromUtf8("widget"))
+        self.layout_titolo = QtGui.QVBoxLayout(self.widget)
+        self.layout_titolo.setSpacing(0)
+        self.layout_titolo.setMargin(0)
+        self.layout_titolo.setMargin(0)
+        self.layout_titolo.setObjectName(_fromUtf8("layout_titolo"))
+        self.horizontalLayout_2.addWidget(self.widget)
         self.buttonCrea = QtGui.QPushButton(self.dockWidgetContents_2)
         self.buttonCrea.setObjectName(_fromUtf8("buttonCrea"))
         self.horizontalLayout_2.addWidget(self.buttonCrea)
@@ -148,7 +152,6 @@ class Ui_MainWindow(object):
         self.menuFile.setTitle(QtGui.QApplication.translate("MainWindow", "File", None, QtGui.QApplication.UnicodeUTF8))
         self.menuAiuto.setTitle(QtGui.QApplication.translate("MainWindow", "Aiuto!", None, QtGui.QApplication.UnicodeUTF8))
         self.menuVisualizza.setTitle(QtGui.QApplication.translate("MainWindow", "Visualizza", None, QtGui.QApplication.UnicodeUTF8))
-        self.titoloEdit.setPlaceholderText(QtGui.QApplication.translate("MainWindow", "titolo del nuovo post", None, QtGui.QApplication.UnicodeUTF8))
         self.buttonCrea.setText(QtGui.QApplication.translate("MainWindow", "Crea", None, QtGui.QApplication.UnicodeUTF8))
         self.buttonElimina.setText(QtGui.QApplication.translate("MainWindow", "Elimina", None, QtGui.QApplication.UnicodeUTF8))
         self.actionLogin.setText(QtGui.QApplication.translate("MainWindow", "Login", None, QtGui.QApplication.UnicodeUTF8))

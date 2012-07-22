@@ -17,6 +17,7 @@ class Post(QtGui.QTextEdit):
     
     def __init__(self,parent=None):
         QtGui.QTextEdit.__init__(self,parent)
+        self.setMinimumHeight(40)
         self._tcpSync(True)
         _testoRimosso = QtCore.pyqtSignal(int,int,name='testoRimosso')
         _testoAggiunto = QtCore.pyqtSignal(int,str,name='testoAggiunto')
