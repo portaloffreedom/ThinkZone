@@ -103,7 +103,7 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
     
     def _cambiautente(self,attuale):
         self._deselectPost(attuale)
-        self._selectPost(self._connettore._cursors[self._connettore._utenteAttivo][1])
+        #self._selectPost(self._connettore._cursors[self._connettore._utenteAttivo][1])
         self._barrier.wait()
     
     def _selpost(self,idpost):

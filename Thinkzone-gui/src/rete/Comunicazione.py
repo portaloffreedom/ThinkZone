@@ -167,7 +167,7 @@ class comunicatore(QtCore.QThread):
                 self._logger.debug("L'utente %s è ora attivo.",str(self._utenteAttivo))
 
                 if(self._utentePrecedente != None):
-                    self.emit(QtCore.SIGNAL('cambiaUtente(int)'),self._activePost)
+                    self.emit(QtCore.SIGNAL('cambiaUtente(int)'),self._lastPost)
                     self._barrier.wait()
                 messaggio = self._controller(controllo, messaggio)
                 return False
