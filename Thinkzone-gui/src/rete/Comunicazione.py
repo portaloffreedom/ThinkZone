@@ -53,7 +53,7 @@ class comunicatore(QtCore.QThread):
         _aggiunta = QtCore.pyqtSignal(int,str,name='aggiunta')
         _nuovopost = QtCore.pyqtSignal(int,name='nuovoPost')
         _selpost = QtCore.pyqtSignal(int,name='selectPost')
-        _nuovutente = QtCore.pyqtSignal(int,int,name='cambiaUtente')
+        _nuovutente = QtCore.pyqtSignal(int,name='cambiaUtente')
         self.blink_cursor = 0
         
     def run(self):
@@ -156,6 +156,7 @@ class comunicatore(QtCore.QThread):
                 return False
             
             if(messaggio== 'U'): # Selezione utente
+                prece = self._utenteAttivo
                 [self._utenteAttivo,controllo] = self._recvInt()
                 try:
                     self._cursors[self._utenteAttivo]
@@ -163,11 +164,10 @@ class comunicatore(QtCore.QThread):
                     self._logger.info("Registrato utente %s.",str(self._utenteAttivo))
                     self._cursors[self._utenteAttivo] = (0,0)
                 self._logger.debug("L'utente %s è ora attivo.",str(self._utenteAttivo))
-                #if(self._utenteAttivo != self._userID):
-                #    self.cursore_locale = self.blink_cursor
-                #if(prece != None):
-                #    self.emit(QtCore.SIGNAL('cambiaUtente(int,int)'),prece,self._activePost)
-                #    self._barrier.wait()
+
+                if(prece != None):
+                    self.emit(QtCore.SIGNAL('cambiaUtente(int)'),self._activePost)
+                    self._barrier.wait()
                 messaggio = self._controller(controllo, messaggio)
                 return False
             
