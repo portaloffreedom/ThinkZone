@@ -333,6 +333,9 @@ func StartServer(laddress string) {
 
 	for !spegniti {
 		conn, err := ln.Accept()
+		if spegniti {
+			return
+		}
 		if err != nil {
 			//TODO fare un pacchetto per la raccolta degli errori
 			logs.Error("Tentativo di connessione non andato a buon fine: ", err.Error())

@@ -20,9 +20,9 @@ func main() {
 		}
 		logs.Log("finito di salvare gli utenti")
 	})*/
-	
+
 	network.StartServer(":4242")
 	//network.StartServer(":80")
 
-
+	<-logs.ChiusuraCompletata
 }

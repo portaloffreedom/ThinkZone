@@ -58,6 +58,7 @@ func init() {
 // Questa funzione chiude il file di log. Da chiamare come procedura per chiudere il 
 // server
 func ChiudiLog() {
+	<-logFileLock
 	fmt.Println("chiusura del file di log in corso")
 	if logFile != nil {
 		logFile.Close()

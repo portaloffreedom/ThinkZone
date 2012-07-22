@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"database/sql"
-	"fmt"
 	"thinkzone/logs"
 
 //	"thinkzone/network"
@@ -107,12 +106,13 @@ func (datab *DatabaseRegistration) GetUserByID(id int) *User {
 func (user *User) VerifyPassword(passwordInput string) bool {
 	hashinput := sha256.New()
 	hashinput.Write([]byte(passwordInput))
-	fmt.Println("paragone password:")
+	//	fmt.Println("paragone password:")
 	//	fmt.Printf("input:_%v_\n", (hashinput.Sum([]byte{})))
 	//	fmt.Printf("datab:_%v_\n", (user.password))
 	return bytes.Equal(hashinput.Sum([]byte{}), user.password)
 }
 
+// Inizializza tutte le operazioni necessarie per sul database
 func init() {
 	logs.Log("init del database")
 
@@ -130,11 +130,6 @@ func init() {
 		logs.Error(err.Error())
 	}
 
-	insertUserOp, err = db.Prepare(insertUser)
-	if err != nil {
-		logs.Error("Impossibile salvare gli utenti nel database\nmotivo: ", err.Error())
-	}
-
 	//	err = salvaUtente(ServerFakeUser)
 	//	if err != nil {
 	//		logs.Error("Impossibile salvare l'utente server nel database\nmotivo: ", err.Error())
@@ -149,5 +144,20 @@ func init() {
 		if insertUserOp != nil {
 			insertUserOp.Close()
 		}
+		if insertPostOp != nil {
+			err := MainConv.salvaTutteLeConversazioni()
+			if err != nil {
+				logs.Error("Impossibile salvare tutti i post\nmotivo: ", err.Error())
+			}
+			insertConvOp.Close()
+		}
+		if insertPostOp != nil {
+			err := MainConv.salvaTuttiIPost(&Data)
+			if err != nil {
+				logs.Error("Impossibile salvare tutti i post\nmotivo: ", err.Error())
+			}
+			insertPostOp.Close()
+		}
+		return
 	})
 }

@@ -16,9 +16,9 @@ type convUser struct {
 
 // Struttura dati che memorizza la conversazione
 type Conversation struct {
-	Title            string // Titolo della conversazione
-	ID_conversazione int    // Identificativo numerico intero univoco della conversazione
-	UtenteAttivo     int    // ID dell'utente attivo sulla conversazione
+	Title        string // Titolo della conversazione
+	ID           int    // Identificativo numerico intero univoco della conversazione
+	UtenteAttivo int    // ID dell'utente attivo sulla conversazione
 
 	//TODO totale_numero_post int
 	//TODO privata	         bool
@@ -39,12 +39,12 @@ func (conv *Conversation) GetAllPositionString() string {
 	var messaggio string
 	posizioni := make([]string, 0, len(conv.connected))
 
-	for k,usr := range conv.connected {
+	for k, usr := range conv.connected {
 		messaggio = "\\U" + strconv.Itoa(k) + "\\\\P" + strconv.Itoa(usr.post) + "\\\\C" + strconv.Itoa(usr.cursore) + "\\"
 		posizioni = append(posizioni, messaggio)
 	}
-	
-	return strings.Join(posizioni,"")
+
+	return strings.Join(posizioni, "")
 }
 
 // Crea un nuovo ConversationError
@@ -178,7 +178,7 @@ func (conv *Conversation) GetComplete(separators bool) string {
 
 	totale := conv.testaPost.getTestoPiuFigli(separators)
 
-	return "\\P0\\\\C0\\"+string(totale)
+	return "\\P0\\\\C0\\" + string(totale)
 }
 
 //funzione ricorsiva per srotolare cosa c'è scritto dentro tutti i post in un'unica stringa

@@ -12,8 +12,17 @@ import (
 
 // variabili per gestire il database
 var (
+	//Operazioni per inserire utente
 	insertUser   string    = "INSERT INTO t_user VALUES ($1, $2, $3)"
 	insertUserOp *sql.Stmt = nil
+
+	//Operazioni per gestire post
+	insertPost   string    = "INSERT INTO post VALUES ($1, $2, $3, $4, $5, $6)"
+	insertPostOp *sql.Stmt = nil
+
+	//Operazioni per gestire le conversazioni
+	insertConv   string    = "INSERT INTO conversation VALUES ($1)"
+	insertConvOp *sql.Stmt = nil
 
 	// Script in SQL per creare le tabelle nel database 
 	createDbSqlScript []string = []string{
@@ -30,17 +39,38 @@ func CreateDataBase() error {
 
 	db, err = sql.Open("postgres", "dbname=thinkzoneDB user=thinkzone")
 	if err != nil {
-		logs.Error("Impossibile creare il database")
+		logs.Error("Impossibile aprire il database")
 		return err
 	}
 
 	for i := range createDbSqlScript {
 		_, err = db.Exec(createDbSqlScript[i])
 		if err != nil {
-			logs.Error("Impossibile creare le tabelle del database")
-			return err
+			if "result error: ERROR:  relation \"t_user\" already exists\n" != err.Error() {
+				logs.Error("Impossibile creare le tabelle del database\nmotivo: _", err.Error(), "_")
+				return err
+			}
+			break
 		}
 
+	}
+
+	insertUserOp, err = db.Prepare(insertUser)
+	if err != nil {
+		//		logs.Error("Impossibile salvare gli utenti nel database\nmotivo: ", err.Error())
+		return err
+	}
+
+	insertPostOp, err = db.Prepare(insertPost)
+	if err != nil {
+		//		logs.Error("Impossibile salvare i post nel database\nmotivo: ", err.Error())
+		return err
+	}
+
+	insertConvOp, err = db.Prepare(insertConv)
+	if err != nil {
+		//		logs.Error("Impossibile salvare le conversazioni nel database\nmotivo: ", err.Error())
+		return err
 	}
 
 	return nil
@@ -114,4 +144,71 @@ func (datab *DatabaseRegistration) CaricaUtenti() error {
 
 	}
 	return nil
+}
+
+func (datab *DatabaseRegistration) salvaPost(conv *Conversation, post *Post) error {
+	var idPadre, idRPri, idRSec int = -1, -1, -1
+	if post.padre != nil {
+		idPadre = post.padre.idPost
+	}
+	if post.rispostaPrincipale != nil {
+		idRPri = post.rispostaPrincipale.idPost
+	}
+	if post.rispostaSecondaria != nil {
+		idRSec = post.rispostaSecondaria.idPost
+	}
+
+	_, err := insertPostOp.Exec(post.idPost, conv.ID, post.testo.GetComplete(false), idPadre, idRPri, idRSec)
+	if err != nil {
+		logs.Error("Impossibile salvare il post ", strconv.Itoa(post.idPost), " nel database")
+		return err
+	}
+
+	return nil
+}
+
+func (conv *Conversation) salvaTuttiIPost(data *DatabaseRegistration) error {
+	messaggio := "salvataggio di tutti i post sul database"
+	logs.Log(messaggio)
+	err := conv.testaPost.salvaPostRic(conv, data)
+
+	if err != nil {
+		logs.Error(messaggio + " fallito")
+	} else {
+		logs.Log(messaggio + " riuscito")
+	}
+
+	return err
+}
+
+func (post *Post) salvaPostRic(conv *Conversation, data *DatabaseRegistration) error {
+
+	err := data.salvaPost(conv, post)
+	if err != nil {
+		return err
+	}
+
+	if post.rispostaPrincipale != nil {
+		err := post.rispostaPrincipale.salvaPostRic(conv, data)
+		if err != nil {
+			return err
+		}
+	}
+	if post.rispostaSecondaria != nil {
+		err := post.rispostaSecondaria.salvaPostRic(conv, data)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (conv *Conversation) salvaTutteLeConversazioni() error {
+	_, err := insertConvOp.Exec(0)
+	if err != nil {
+		logs.Error("Impossibile salvare il post", strconv.Itoa(conv.ID), " nel database")
+		return err
+	}
+	return nil
+
 }
