@@ -67,7 +67,7 @@ func (datab *DatabaseRegistration) RegisterNewUser(username, password string) (u
 		hashpassword.Write([]byte(password))
 		user.password = hashpassword.Sum([]byte{})
 
-		err := salvaUtente(user)
+		err := salvaUtenteSQL(user)
 		if err != nil {
 			logs.Error(err.Error())
 			return nil, false
@@ -123,11 +123,15 @@ func init() {
 	serverPassword.Write([]byte("toor"))
 	ServerFakeUser.password = serverPassword.Sum([]byte{})
 
-	MainConv = NewConversation(ServerFakeUser)
-
-	err := CreateDataBase()
+	err := CreateDataBaseSQL()
 	if err != nil {
 		logs.Error(err.Error())
+	}
+
+	//	MainConv = NewConversation(ServerFakeUser)
+	err = Data.caricaConversazioni()
+	if err != nil {
+		logs.Error("Impossibile caricare le conversazioni vecchie\nmotivo: ", err.Error())
 	}
 
 	//	err = salvaUtente(ServerFakeUser)
@@ -135,7 +139,7 @@ func init() {
 	//		logs.Error("Impossibile salvare l'utente server nel database\nmotivo: ", err.Error())
 	//	}()
 
-	Data.CaricaUtenti()
+	Data.CaricaUtentiSQL()
 	if err != nil {
 		logs.Error("Impossibile caricare gli utenti dal database\nmotivo: ", err.Error())
 	}
@@ -145,14 +149,14 @@ func init() {
 			insertUserOp.Close()
 		}
 		if insertPostOp != nil {
-			err := MainConv.salvaTutteLeConversazioni()
+			err := MainConv.salvaTutteLeConversazioniSQL()
 			if err != nil {
 				logs.Error("Impossibile salvare tutti i post\nmotivo: ", err.Error())
 			}
 			insertConvOp.Close()
 		}
 		if insertPostOp != nil {
-			err := MainConv.salvaTuttiIPost(&Data)
+			err := MainConv.salvaTuttiIPostSQL(&Data)
 			if err != nil {
 				logs.Error("Impossibile salvare tutti i post\nmotivo: ", err.Error())
 			}

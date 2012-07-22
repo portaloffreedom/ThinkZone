@@ -312,7 +312,7 @@ func StartServer(laddress string) {
 		//TODO handle error
 	}
 
-	database.MainConv = database.NewConversation(database.ServerFakeUser)
+	//database.MainConv = database.NewConversation(database.ServerFakeUser) //duplicato!
 
 	//canale := make(chan byte, 256)
 	codaReadiness := make(chan *Client, 64)

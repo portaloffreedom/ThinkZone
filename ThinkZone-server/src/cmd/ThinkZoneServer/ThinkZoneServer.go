@@ -7,6 +7,8 @@ import (
 	"thinkzone/network"
 )
 
+var Version string = "0.2a"
+
 func main() {
 	fmt.Println("Benvenuto su ThinkZone!")
 	logs.StampaSuTerminale(true)

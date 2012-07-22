@@ -2,6 +2,7 @@ package database
 
 import (
 	"container/list"
+	"thinkzone/logs"
 )
 
 // Struttura dati per la memorizzazione del singolo post
@@ -22,11 +23,17 @@ func (conv *Conversation) NewPost(creator *User, padre *Post) *Post {
 	post := new(Post)
 
 	post.testo = NewSuperString()
+	post.padre = padre
 	post.idPost = conv.contatorePost
 	post.writers = list.New()
 	post.writers.PushFront(creator)
 	conv.contatorePost++
 	conv.postMap[post.idPost] = post
+
+	err := Data.creaPostSQL(conv, post)
+	if err != nil {
+		logs.Error("Impossibile creare il post sul database\nmotivo:", err.Error())
+	}
 
 	return post
 }

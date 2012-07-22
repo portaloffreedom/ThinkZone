@@ -2,6 +2,7 @@
 package database
 
 import (
+	"container/list"
 	"database/sql"
 	"fmt"
 	_ "github.com/jbarham/gopgsqldriver"
@@ -19,6 +20,8 @@ var (
 	//Operazioni per gestire post
 	insertPost   string    = "INSERT INTO post VALUES ($1, $2, $3, $4, $5, $6)"
 	insertPostOp *sql.Stmt = nil
+	updatePost   string    = "UPDATE post SET text = $5,  father = $2, first_response = $3, second_response =$4 WHERE id = $1;"
+	updatePostOp *sql.Stmt = nil
 
 	//Operazioni per gestire le conversazioni
 	insertConv   string    = "INSERT INTO conversation VALUES ($1)"
@@ -29,12 +32,12 @@ var (
 		"CREATE TABLE t_user ( id INT PRIMARY KEY, username CHAR(64) NOT NULL UNIQUE, password BYTEA NOT NULL)",
 		"CREATE TABLE conversation ( id INT PRIMARY KEY )",
 		"CREATE TABLE archive ( t_user INT, conversation INT, PRIMARY KEY (t_user,conversation), FOREIGN KEY (t_user) REFERENCES t_user(id), FOREIGN KEY (conversation) REFERENCES conversation(id))",
-		"CREATE TABLE post ( id INT NOT NULL, conversation INT NOT NULL, text TEXT, pather INT, first_response INT, second_response INT, PRIMARY KEY (id, conversation), FOREIGN KEY (conversation) REFERENCES conversation(id))",                           //, FOREIGN KEY (pather) REFERENCES post(id), FOREIGN KEY (first_response) REFERENCES post(id), FOREIGN KEY (second_response) REFERENCES post(id))",
+		"CREATE TABLE post ( id INT NOT NULL, conversation INT NOT NULL, text TEXT, father INT, first_response INT, second_response INT, PRIMARY KEY (id, conversation), FOREIGN KEY (conversation) REFERENCES conversation(id))",                           //, FOREIGN KEY (pather) REFERENCES post(id), FOREIGN KEY (first_response) REFERENCES post(id), FOREIGN KEY (second_response) REFERENCES post(id))",
 		"CREATE TABLE author ( t_user INT NOT NULL, post INT NOT NULL, conversation INT NOT NULL, PRIMARY KEY (t_user,conversation, post), FOREIGN KEY (t_user) REFERENCES t_user(id), FOREIGN KEY (post, conversation) REFERENCES post(id, conversation))"} //, FOREIGN KEY (conversation) REFERENCES post(conversation))"}
 
 )
 
-func CreateDataBase() error {
+func CreateDataBaseSQL() error {
 	var err error
 
 	db, err = sql.Open("postgres", "dbname=thinkzoneDB user=thinkzone")
@@ -63,6 +66,12 @@ func CreateDataBase() error {
 
 	insertPostOp, err = db.Prepare(insertPost)
 	if err != nil {
+		//		logs.Error("Impossibile creare i post nel database\nmotivo: ", err.Error())
+		return err
+	}
+
+	updatePostOp, err = db.Prepare(updatePost)
+	if err != nil {
 		//		logs.Error("Impossibile salvare i post nel database\nmotivo: ", err.Error())
 		return err
 	}
@@ -77,7 +86,7 @@ func CreateDataBase() error {
 
 }
 
-func salvaUtente(user *User) error {
+func salvaUtenteSQL(user *User) error {
 
 	_, err := insertUserOp.Exec(user.ID, user.Username, user.password)
 	if err != nil {
@@ -88,30 +97,7 @@ func salvaUtente(user *User) error {
 	return nil
 }
 
-/*func SalvaUtenti() error {
-	logs.Log("salvo1")
-	operazione, err := db.Prepare(insertUser)
-	if err != nil {
-		logs.Error("Impossibile salvare gli utenti nel database")
-		return err
-	}
-	defer operazione.Close()
-
-	logs.Log("salvo2")
-	for _, user := range Data.userIDtoUser {	
-		_, err = operazione.Exec(user.ID, user.Username, user.password)
-		if err != nil {
-			logs.Error("Impossibile salvare ", user.Username, " nel database")
-			return err
-		}
-	}
-
-	logs.Log("salvo3")
-
-	return nil
-}*/
-
-func (datab *DatabaseRegistration) CaricaUtenti() error {
+func (datab *DatabaseRegistration) CaricaUtentiSQL() error {
 
 	rows, err := db.Query("SELECT * FROM t_user")
 	if err != nil {
@@ -146,7 +132,9 @@ func (datab *DatabaseRegistration) CaricaUtenti() error {
 	return nil
 }
 
-func (datab *DatabaseRegistration) salvaPost(conv *Conversation, post *Post) error {
+func (datab *DatabaseRegistration) creaPostSQL(conv *Conversation, post *Post) error {
+	logs.Log("creo post ", strconv.Itoa(post.idPost))
+
 	var idPadre, idRPri, idRSec int = -1, -1, -1
 	if post.padre != nil {
 		idPadre = post.padre.idPost
@@ -160,6 +148,30 @@ func (datab *DatabaseRegistration) salvaPost(conv *Conversation, post *Post) err
 
 	_, err := insertPostOp.Exec(post.idPost, conv.ID, post.testo.GetComplete(false), idPadre, idRPri, idRSec)
 	if err != nil {
+		logs.Error("Impossibile creare il post ", strconv.Itoa(post.idPost), " nel database")
+		return err
+	}
+
+	return nil
+
+}
+
+func (datab *DatabaseRegistration) salvaPostSQL(conv *Conversation, post *Post) error {
+	logs.Log("salvo post ", strconv.Itoa(post.idPost))
+	var idPadre, idRPri, idRSec int = -1, -1, -1
+	if post.padre != nil {
+		idPadre = post.padre.idPost
+	}
+	if post.rispostaPrincipale != nil {
+		idRPri = post.rispostaPrincipale.idPost
+	}
+	if post.rispostaSecondaria != nil {
+		idRSec = post.rispostaSecondaria.idPost
+	}
+
+	//campi:					id		padre	first_response 		second_response 	text
+	_, err := updatePostOp.Exec(post.idPost, idPadre, idRPri, idRSec, post.testo.GetComplete(false))
+	if err != nil {
 		logs.Error("Impossibile salvare il post ", strconv.Itoa(post.idPost), " nel database")
 		return err
 	}
@@ -167,10 +179,10 @@ func (datab *DatabaseRegistration) salvaPost(conv *Conversation, post *Post) err
 	return nil
 }
 
-func (conv *Conversation) salvaTuttiIPost(data *DatabaseRegistration) error {
+func (conv *Conversation) salvaTuttiIPostSQL(data *DatabaseRegistration) error {
 	messaggio := "salvataggio di tutti i post sul database"
 	logs.Log(messaggio)
-	err := conv.testaPost.salvaPostRic(conv, data)
+	err := conv.testaPost.salvaPostRicSQL(conv, data)
 
 	if err != nil {
 		logs.Error(messaggio + " fallito")
@@ -181,21 +193,21 @@ func (conv *Conversation) salvaTuttiIPost(data *DatabaseRegistration) error {
 	return err
 }
 
-func (post *Post) salvaPostRic(conv *Conversation, data *DatabaseRegistration) error {
+func (post *Post) salvaPostRicSQL(conv *Conversation, data *DatabaseRegistration) error {
 
-	err := data.salvaPost(conv, post)
+	err := data.salvaPostSQL(conv, post)
 	if err != nil {
 		return err
 	}
 
 	if post.rispostaPrincipale != nil {
-		err := post.rispostaPrincipale.salvaPostRic(conv, data)
+		err := post.rispostaPrincipale.salvaPostRicSQL(conv, data)
 		if err != nil {
 			return err
 		}
 	}
 	if post.rispostaSecondaria != nil {
-		err := post.rispostaSecondaria.salvaPostRic(conv, data)
+		err := post.rispostaSecondaria.salvaPostRicSQL(conv, data)
 		if err != nil {
 			return err
 		}
@@ -203,12 +215,100 @@ func (post *Post) salvaPostRic(conv *Conversation, data *DatabaseRegistration) e
 	return nil
 }
 
-func (conv *Conversation) salvaTutteLeConversazioni() error {
+func (conv *Conversation) salvaTutteLeConversazioniSQL() error {
 	_, err := insertConvOp.Exec(0)
 	if err != nil {
-		logs.Error("Impossibile salvare il post", strconv.Itoa(conv.ID), " nel database")
+		logs.Error("Impossibile salvare la conversazione ", strconv.Itoa(conv.ID), " nel database")
 		return err
 	}
 	return nil
 
+}
+
+func (datab *DatabaseRegistration) caricaConversazioni() error {
+
+	rows, err := db.Query("SELECT * FROM conversation")
+	if err != nil {
+		return err
+	}
+
+	logs.Log("caricamento conversazioni")
+	for ; rows.Next(); datab.contatore++ {
+		var conversationID int
+
+		err := rows.Scan(&conversationID)
+		if err != nil {
+			return err
+		}
+
+		MainConv = new(Conversation)
+		MainConv.ID = conversationID
+		MainConv.connected = make(map[int]*convUser)
+		MainConv.postMap = make(map[int]*Post)
+		MainConv.contatorePost = 0
+
+		err = MainConv.caricaPost()
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("caricata conversazione:", conversationID)
+
+	}
+	return nil
+}
+
+func (conv *Conversation) caricaPost() error {
+
+	query, err := db.Prepare("SELECT id,father,text,first_response,second_response FROM post WHERE conversation = $1")
+	if err != nil {
+		return err
+	}
+	rows, err := query.Query(conv.ID)
+	if err != nil {
+		return err
+	}
+
+	parentPostMap := make(map[int]*Post)
+	firSonPostMap := make(map[int]*Post)
+	secSonPostMap := make(map[int]*Post)
+	logs.Log("caricamento post della conversazione ", strconv.Itoa(conv.ID))
+	for ; rows.Next(); conv.contatorePost++ {
+		var id, parent, first_response, second_response int
+		var text string
+
+		err := rows.Scan(&id, &parent, &text, &first_response, &second_response)
+		if err != nil {
+			return err
+		}
+
+		post := new(Post)
+		post.idPost = id
+		post.testo = NewSuperString()
+		post.testo.InsStringElem(text, 0)
+		conv.postMap[id] = post
+		post.writers = list.New()
+
+		if id == 0 {
+			conv.testaPost = post
+		}
+
+		parentPostMap[parent] = post
+		firSonPostMap[first_response] = post
+		secSonPostMap[second_response] = post
+
+		fmt.Println("caricato vecchio post: ", strconv.Itoa(id), "\ntesto: ", text)
+
+	}
+	for k, post := range parentPostMap {
+		post.padre = conv.postMap[k]
+	}
+	for k, post := range firSonPostMap {
+		post.rispostaPrincipale = conv.postMap[k]
+	}
+	for k, post := range secSonPostMap {
+		post.rispostaSecondaria = conv.postMap[k]
+	}
+
+	return nil
 }
