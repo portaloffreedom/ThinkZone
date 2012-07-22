@@ -2,7 +2,6 @@
 Crea la finestra principale del programma Thinkzone.
 In questa finestra è possibile creare e modificare conversazioni e post.
 Questo modulo contiene soltanto la classe da istanziare per creare la finestra principale.
-@author: stengun
 '''
 import logging
 from gui import finestraprincipale,loginDialog,aboutDialog
@@ -77,8 +76,8 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
                 self.titoloEdit.setDisabled(True)
                 self.titoloEdit.setHidden(True)
         self._logger.debug("Creazione nuovo post.")
-        self._connettore._spedisci('\K0\\') #warning
-        #self._connettore._spedisci('\K'+str(atti)+'\\') # WARNING da ricontrollare meglio.
+        #self._connettore._spedisci('\K0\\') #warning
+        self._connettore._spedisci('\K'+str(atti)+'\\') # WARNING da ricontrollare meglio.
     
     def _selectPost(self,idpost):
         selezionato = self._postids[idpost]

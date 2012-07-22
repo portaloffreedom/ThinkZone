@@ -1,25 +1,23 @@
 '''
-Classe comunicatore che riesce a ricevere e inviare dati.
+Modulo che permette di ricevere e inviare dati.
 Ha dentro definite le meccaniche di comunicazione.
 
-Tutti i comandi sono nel formato \\XY\\
+Tutti i comandi sono nel formato **\\XY\\**
 Qui di seguito sono elencati tutti i comandi supportati dal server:
 
 Ricezione/Invio:
-    \\Px\\ - Comando che indica il post attivo per i comandi successivi. x è un intero, indica l'id del post.
-    \\Cx\\ - Indica un aggiornamento per il cursore della scrittura/lettura. x è un intero, indica la posizione del cursore.
-    \\Dx\\ - Indica la cancellazione di qualcosa. x è un intero che dice quanti caratteri sono stati cancellati.
+ * **\\Px\\** - Comando che indica il post attivo per i comandi successivi. *x* è un intero, indica l'id del post.
+ * **\\Cx\\** - Indica un aggiornamento per il cursore della scrittura/lettura. *x* è un intero, indica la posizione del cursore.
+ * **\\Dx\\** - Indica la cancellazione di qualcosa. *x* è un intero che dice quanti caratteri sono stati cancellati.
 
 Ricezione:
-    \\Rx\\ - Response dal server per un dato comando. x è un intero che rappresenta il codice risposta.
-    \\Ux\\ - Indica l'utente attivo per i comandi successivi. x è un intero, rappresenta l'ID utente.
-    \\Kx\\y\\ - Indica la creazione di un post. x rappresenta l'id del post "padre", y l'id del post appena creato.
+ * **\\Rx\\**   - Response dal server per un dato comando. *x* è un intero che rappresenta il codice risposta.
+ * **\\Ux\\**   - Indica l'utente attivo per i comandi successivi. *x* è un intero, rappresenta l'ID utente.
+ * **\\Kx\y\\** - Indica la creazione di un post. *x* rappresenta l'id del post "padre", *y* l'id del post appena creato.
 
 Invio:
-    \\Lx\\ - Indica al server il comando di login. x rappresenta il comando. 0 per login, 1 per registrazione.
-    \\Kx\\ - Indica al server che voglio creare un post. x è il padre del post.
-
-@author: stengun
+ * **\\Lx\\** - Indica al server il comando di login. *x* rappresenta il comando. *0* per login, *1* per registrazione.
+ * **\\Kx\\** - Indica al server che voglio creare un post. *x* è il padre del post.
 '''
 import queue,socket,sys,logging
 from PyQt4 import QtCore
