@@ -160,6 +160,13 @@
       </spacer>
      </item>
      <item>
+      <widget class="QLabel" name="titoloLabel">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QLineEdit" name="titoloEdit">
        <property name="placeholderText">
         <string>titolo del nuovo post</string>

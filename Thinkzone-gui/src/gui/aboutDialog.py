@@ -1,5 +1,7 @@
 '''
 Created on 12/lug/2012
+Finestra di Dialog per la schermata di ABOUT.
+Aggiunge poco e nulla al costruttore generato da QT Designer.
 
 @author: stengun
 '''
@@ -7,7 +9,7 @@ from gui import about
 from PyQt4 import QtGui, QtCore
 class aboutDial(QtGui.QDialog, about.Ui_Dialog):
     '''
-    classdocs
+    Costruisce una finestra di dialogo ABOUT per Thinkzone.
     '''
 
 
@@ -16,7 +18,5 @@ class aboutDial(QtGui.QDialog, about.Ui_Dialog):
         self.ui = about.Ui_Dialog()
         self.setupUi(self)
         QtCore.QObject.connect(self.buttonChiudi, QtCore.SIGNAL('pressed()'),self.close)
-        '''
-        Constructor
-        '''
+
         
