@@ -1,6 +1,8 @@
 '''
 Created on 11/lug/2012
-
+Mini widget per gestire la modifica concorrenziale di una textarea.
+Eredita da textarea e sviluppa in modo semplice i metodi per consentire la
+scrittura a più utenti senza modificare puntatori all'utente locale.
 @author: stengun
 '''
 
@@ -8,7 +10,7 @@ from PyQt4 import QtGui, QtCore
 
 class Post(QtGui.QTextEdit):
     '''
-    Classe per gestire il testo in arrivo e da inviare.
+    Classe che rappresenta la textArea del post
     '''
     testo = ''
     blink_cursor = 0

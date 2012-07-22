@@ -1,6 +1,5 @@
 '''
-Created on 21/lug/2012
-
+UNITTEST per testare i metodi di registrazione, connessione e disconnessione del server.
 @author: stengun
 '''
 import unittest
@@ -18,8 +17,8 @@ class TestLogin(unittest.TestCase):
         self.login = Comunicazione.comunicatore()
     
     def testRegister(self):
+        self.assertFalse(self.login.registrati(self.hostname, 'abc', self.nome, self.password),"Testo la registrazione")
         self.assertTrue(self.login.registrati(self.hostname, self.porta, self.nome, self.password),"Testo la registrazione")
-    
     def testLogin(self):     
         self.assertTrue(self.login.connetti(self.hostname, self.porta, self.nome, self.password),"Testando connessione")
         self.assertGreater(self.login._userID, 0, "testando l'user ID")

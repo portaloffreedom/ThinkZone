@@ -1,5 +1,7 @@
 '''
-Crea e avvia il programma principale Thinkzone.
+Crea la finestra principale del programma Thinkzone.
+In questa finestra è possibile creare e modificare conversazioni e post.
+Questo modulo contiene soltanto la classe da istanziare per creare la finestra principale.
 @author: stengun
 '''
 import logging
@@ -27,6 +29,11 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
     __VERSION__ = None
 
     def __init__(self,version,parent = None):
+        '''
+        Costruisce una finestra principale di Thinkzone.
+        Ha bisogno di alcuni parametri per avviarsi.
+        @param version: La versione del programma. 
+        '''
         self.__VERSION__ = version
         logging.basicConfig(filename="thinkzone_gui.log",format='%(asctime)s | Loglevel: %(levelname)s | %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
         self._logger = logging.getLogger()
@@ -35,9 +42,9 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
         QtGui.QMainWindow.__init__(self,parent)
         self.ui = finestraprincipale.Ui_MainWindow()
         self.setupUi(self)
-        #self.layoutTextarea.addWidget(self._textArea)
         spacerItem = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
         self.layoutTextarea.addItem(spacerItem)
+        
         #setup finestre di dialogo
         self._loginDialog = loginDialog.Login(self)
         self._aboutDialog = aboutDialog.aboutDial(self)
@@ -68,8 +75,10 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
                 self.titoloLabel.setText(self.titoloEdit.text())
                 self.titoloEdit.setText('')
                 self.titoloEdit.setDisabled(True)
+                self.titoloEdit.setHidden(True)
         self._logger.debug("Creazione nuovo post.")
-        self._connettore._spedisci('\K'+str(atti)+'\\') #FIXME ci sarà un bel bug qui dentro
+        self._connettore._spedisci('\K0\\') #warning
+        #self._connettore._spedisci('\K'+str(atti)+'\\') # WARNING da ricontrollare meglio.
     
     def _selectPost(self,idpost):
         selezionato = self._postids[idpost]
@@ -78,7 +87,6 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
             QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('rimozione(int,int)'),selezionato.rimuoviTesto,2)
             QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),selezionato.aggiungiTesto,2)
             self._logger.debug("Selezionato il post"+str(idpost))
-            #print('selezionato il post '+str(idpost))
     
     def _deselectPost(self,idpost):
         if(idpost == 0):
@@ -90,7 +98,6 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
             QtCore.QObject.disconnect(self._connettore,QtCore.SIGNAL('rimozione(int,int)'),selezionato.rimuoviTesto)
             QtCore.QObject.disconnect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),selezionato.aggiungiTesto)
             self._logger.debug("Deselezionato il post"+str(idpost))
-            #print('deselezionato il post '+str(idpost))
     
     def _cambiautente(self,precedente,attuale):
         #print('CAMBIO UTENTE')
@@ -101,15 +108,13 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
         self._barrier.wait()
     
     def _selpost(self,idpost):
-        #if(self._connettore._cursors[self._connettore._utenteAttivo][1] != idpost):
         if(idpost !=0):
             precedente = self._connettore._cursors[self._connettore._utenteAttivo][1]
             if(precedente != None):
                 self._deselectPost(precedente)
-            self._selectPost(idpost)#
+            self._selectPost(idpost)
         else:
             if(not(self._settato)):
-                #print('connesso titolo')
                 QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),self._setTitolo,2)
                 self._settato = True
         self._connettore._cursors[self._connettore._utenteAttivo] = (self._connettore._cursors[self._connettore._utenteAttivo][0],idpost)
@@ -117,32 +122,29 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
         self._barrier.wait()
     
     def _setTitolo(self,indi,stringa):
-        #print('arrivato titolo: ',stringa)
         if(stringa != ''):
             self._logger.debug("Impostazione titolo discussione: "+stringa)
             self.titoloLabel.setText(self.titoloLabel.text()+stringa)
             self.titoloEdit.setDisabled(True)
+            self.titoloEdit.setHidden(True)
         
     def _creapost(self,idpost):
         '''
         Parsing degli ID dei post. Crea nuovi post, seleziona post precedenti e dice quando non esistono.
         '''          
         if(self._connettore._cursors[self._connettore._utenteAttivo][1] == 0):
-            #print('CREO POST E TOLGO IL TITOLO')
+            #Forse è inutile a questo punto delle cose.
             QtCore.QObject.disconnect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),self._setTitolo)
         if(idpost == 0):
-            #return
-            idpost +=1
+            #significa che sto creando una nuova conversazione e va settato il titolo.
+            pass
             #TODO inserire un elemento in lista conversazione
-            #pass
         self._logger.debug("Creazione di un nuovo post con ID: "+str(idpost))
-        #print('creazione nuovo post con ID',idpost)
         textArea = PostWidget.postWidget(idpost)
         self._postids[idpost] = textArea
         self.layoutTextarea.addWidget(textArea)
         QtCore.QObject.connect(textArea,QtCore.SIGNAL('testoRimosso(int,int,int)'), self._connettore.spedisci_rimozione)
         QtCore.QObject.connect(textArea,QtCore.SIGNAL('testoAggiunto(int,QString,int)'), self._connettore.spedisci_aggiunta)
         self._barrier.wait()
-        #print('Post selezionato:',idpost)
-        #self._connettore._activePost = idpost
+
         

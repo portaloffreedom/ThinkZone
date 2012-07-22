@@ -1,6 +1,5 @@
 '''
-Created on 19/lug/2012
-Classe per testare le funzioni del programma.
+Unittest per verificare le impostazioni delle finestre in presenza di input non ammessi.
 @author: stengun
 '''
 import unittest,sys
@@ -17,7 +16,7 @@ class testWidgets(unittest.TestCase):
     
     def setUp(self):
         self.app = QApplication(sys.argv)
-        self._principale = MainWindow.mainwindow()
+        self._principale = MainWindow.mainwindow("0.0.0")
         self._about = aboutDialog.aboutDial(self._principale)
         self._loginwidget = loginDialog.Login(self._principale)
     
@@ -25,10 +24,20 @@ class testWidgets(unittest.TestCase):
         self._loginwidget.usernameEdit.setText("testing")
         self._loginwidget.passwordEdit.setText("testing")
         self._loginwidget.hostEdit.setText("192.168.0.42")
+        
+        self._loginwidget.portaEdit.setText("4242")
+        self.assertGreater(int(self._loginwidget.portaEdit.text()), 0, "Testing valore porta")
         self._loginwidget.portaEdit.setText("-4242")
         self.assertGreater(int(self._loginwidget.portaEdit.text()), 0, "Testing valore porta")
+        self._loginwidget.portaEdit.setText("a32o")
+        self.assertGreater(int(self._loginwidget.portaEdit.text()), 0, "Testing valore porta")
+        
         registrabutton = self._loginwidget.buttonRegister
         connettibutton = self._loginwidget.buttonConnect
+        #sequenza sballata
+        QTest.mouseClick(connettibutton,Qt.LeftButton)
+        QTest.mouseClick(registrabutton,Qt.LeftButton)
+        #sequenza corretta
         QTest.mouseClick(registrabutton,Qt.LeftButton)
         QTest.mouseClick(connettibutton,Qt.LeftButton)
 

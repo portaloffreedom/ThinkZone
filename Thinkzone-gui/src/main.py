@@ -1,6 +1,23 @@
 '''
 Classe main per il programma Thinkzone.
 Permette di registrare un utente via riga di comando, o eventualmente di far partire l'interfaccia grafica.
+
+Utilizzo: Thinkzone [-h] [-v] (-g | -r username password) [-a hostname]
+                 [-p porta]
+
+Argomenti opzionali:
+  -h, --help            Visualizza questo messaggio.
+  -v, --version         stampa la versione del programma ed esce.
+  -g, --gui             Fa partire l'interfaccia grafica.
+  -r username password  Registra un utente.
+
+Opzioni registrazione:
+  -a hostname, --address hostname
+                        Hostname del server per la registraizone.
+  -p porta, --port porta
+                        La porta del server a cui connettersi.
+
+
 @author: stengun
 '''
 import argparse,sys

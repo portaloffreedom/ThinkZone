@@ -1,6 +1,24 @@
 '''
 Classe comunicatore che riesce a ricevere e inviare dati.
 Ha dentro definite le meccaniche di comunicazione.
+
+Tutti i comandi sono nel formato \\XY\\
+Qui di seguito sono elencati tutti i comandi supportati dal server:
+
+Ricezione/Invio:
+    \\Px\\ - Comando che indica il post attivo per i comandi successivi. x è un intero, indica l'id del post.
+    \\Cx\\ - Indica un aggiornamento per il cursore della scrittura/lettura. x è un intero, indica la posizione del cursore.
+    \\Dx\\ - Indica la cancellazione di qualcosa. x è un intero che dice quanti caratteri sono stati cancellati.
+
+Ricezione:
+    \\Rx\\ - Response dal server per un dato comando. x è un intero che rappresenta il codice risposta.
+    \\Ux\\ - Indica l'utente attivo per i comandi successivi. x è un intero, rappresenta l'ID utente.
+    \\Kx\\y\\ - Indica la creazione di un post. x rappresenta l'id del post "padre", y l'id del post appena creato.
+
+Invio:
+    \\Lx\\ - Indica al server il comando di login. x rappresenta il comando. 0 per login, 1 per registrazione.
+    \\Kx\\ - Indica al server che voglio creare un post. x è il padre del post.
+
 @author: stengun
 '''
 import queue,socket,sys,logging
@@ -9,6 +27,7 @@ from PyQt4 import QtCore
 class comunicatore(QtCore.QThread):
     '''
     Generico comunicatore che imposta anche i thread per la ricezione.
+    Effettua il parsing dei dati ricevuti e dei responses, loggando anche i messaggi di errore.
     '''
 
     _socket = None
@@ -102,14 +121,13 @@ class comunicatore(QtCore.QThread):
     def _parseinput(self,messaggio):
         '''
         Effettua l'analisi del messaggio ricevuto: Ritorna TRUE se si tratta di un carattere di controllo,
-        altri menti ritorna False quando si tratta di un comando.
+        altrimenti ritorna False quando si tratta di un comando.
+        Per ogni comando effettua l'azione corrispondente prima di uscire.
         '''
         controllo = '\00'
         
         if(messaggio == '\\'): # selezione comando
-            #print('caso 1')
             messaggio = self._messaggi.get(True,None)
-            #print('comando:',messaggio)
             if(messaggio == '\\'): #non è un comando.
                 return True
             
@@ -140,8 +158,6 @@ class comunicatore(QtCore.QThread):
                 return False
             
             if(messaggio== 'U'): # Selezione utente
-                #print('caso U')
-#                prece = self._utenteAttivo
                 [self._utenteAttivo,controllo] = self._recvInt()
                 try:
                     self._cursors[self._utenteAttivo]
@@ -164,7 +180,6 @@ class comunicatore(QtCore.QThread):
                 return False
             
             if(messaggio == 'P'):#selezione post
-                #print('caso POST')
                 [idpost,controllo] = self._recvInt()
                 self._logger.debug("Utente %s, seleziona il post %s",str(self._utenteAttivo),str(idpost))
                 messaggio = self._controller(controllo, messaggio)
@@ -174,7 +189,6 @@ class comunicatore(QtCore.QThread):
                 return False
             
             if(messaggio == 'K'):
-                print('caso Kreazione') #non sono un bimbominchia
                 [parent,controllo] = self._recvInt()
                 [idpost,controllo] = self._recvInt()
                 self.emit(QtCore.SIGNAL('nuovoPost(int)'),idpost)
@@ -191,7 +205,12 @@ class comunicatore(QtCore.QThread):
             self._logger.info("Registrazione già effettuata.")
             return self._registered
         
-        self._socket.connect((hostname,porta))
+        try:
+            self._socket.connect((hostname,porta))
+        except:
+            print('Errore registrazione: ',sys.exc_info(),sys.stderr)
+            return self._registered
+        
         self._receive_thread = Receiver(self._messaggi,self._socket)
         self._receive_thread.start()
         self._spedisci('\L1\\')
@@ -239,20 +258,26 @@ class comunicatore(QtCore.QThread):
                 return False
         try:
             [self._userID,controllo] = self._recvInt()
+            if(self._controller(controllo, messaggio) == None):
+                raise BaseException
         except:
             self._logger.critical("Connessione chiusa dal server!",exc_info=True)
-            #print('connessione chiusa!',file=sys.stderr)
             sys.exit()
-        
-        #print('il tuo ID',self._userID,' controllo:',controllo)
+
         self._cursors[self._userID] = (0,0)
-        self._logger.info("Connessione effettuata correttamente.\n \
+        self._logger.info("Connessione effettuata correttamente.\
                             ID utente %s",str(self._userID))
         return True
         
     def _parseResponse(self,response):
         '''
         Metodo che analizza i codici di risposta, e ritorna True se è un codice di errore.
+        Codici di risposta:
+            0 - Tutto ok
+            1 - (login) Errore: utente non registrato
+            2 - (login) Errore: utente già connesso
+            3 - (login) Errore: password sbagliata
+        
         '''
         if(response == 0):
             self._logger.info("Response OK")
@@ -294,24 +319,16 @@ class comunicatore(QtCore.QThread):
     def spedisci_aggiunta(self,posizione,dati,idpost):
         '''
         Spedisce al server una aggiunta di testo su uno specifico post e da una specifica posizione.
-        '''
-        #dati = dati.encode()
-        #self._spedisci('\00')
-#        print('posizione attuale',self._cursors[self._userID][0])
-#        print('posizione da cui partire',posizione)
-#        print('posizione da aggiungere',len(dati))
-#        
+        '''      
         if(self._cursors[self._userID][1] != idpost):
             self._spedisci('\P'+str(idpost)+'\\')
-            #self._cursors[self._utenteAttivo] = (self._cursors[self._utenteAttivo][0],idpost)
 
         if(self._cursors[self._userID][0] != posizione):
             self._spedisci('\C'+str(posizione)+'\\')
-            #self._cursors[self._utenteAttivo] = (self._cursors[self._utenteAttivo][0]+len(dati),idpost)
+
         self._spedisci(dati)
         self._cursors[self._userID] = (posizione+len(dati),idpost)
         self._logger.debug("POST %s: Spedita aggiunta da %s di %s caratteri.",str(idpost),str(posizione),str(len(dati)))
-        #print('posizione finale',self._cursors[self._userID][0])
         
     def spedisci_rimozione(self,posizione,rimossi,idpost):
         '''
@@ -332,6 +349,7 @@ class comunicatore(QtCore.QThread):
 class Receiver(QtCore.QThread):
     '''
     Classe che rappresenta il thread per ricevere i dati
+    L'unica cosa che fa è ricevere dei dati da un socket e inserirli dentro una coda.
     '''
     _coda = queue.Queue()
     _stop = None
@@ -345,7 +363,6 @@ class Receiver(QtCore.QThread):
     
     def run(self):
         while(not(self._stop)):
-            #print('ricevimento')
             try:
                 buffer = self._socket.recv(1)
                 try:
@@ -355,8 +372,7 @@ class Receiver(QtCore.QThread):
                     buffer = buffer.decode("utf-8")
                 self._coda.put(buffer)
             except:
-                self._logger.exception("Thread ricezione: chiusura thread in corso.")
-                #print('eccezione in ricezione',sys.exc_info())
+                self._logger.exception("Thread"+str(self.__name__)+": chiusura thread in corso.")
                 self._stop = True
                 self._coda = None
         self._stop = False

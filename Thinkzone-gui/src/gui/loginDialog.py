@@ -9,10 +9,7 @@ from PyQt4 import QtGui, QtCore
 
 class Login(QtGui.QDialog, login.Ui_Dialog):
     '''
-    Classe per la finestra principale.
-    Eredita da login.Ui_Dialog. Costruisce e connette tutti i componenti della finestra
-    di login. Modificare questo file se si vuole aggiungere nuovi connettori o widget
-    particolari.
+    Dialog box per il login. Imposta tutti i connettori personalizzati e controlli sui widget.
     '''
     _connettore = None
     _parent = None
@@ -24,7 +21,7 @@ class Login(QtGui.QDialog, login.Ui_Dialog):
         self._connettore = parent._connettore
         self.setupUi(self)
         self.serverBox.addItems(['Server personalizzato','localhost:4242','192.168.0.42:4242','portaloffreedom.is-a-geek.org:4242'])
-        QtCore.QObject.connect(self.portaEdit,QtCore.SIGNAL('textEdited(QString)'), self._absedit)
+        QtCore.QObject.connect(self.portaEdit,QtCore.SIGNAL('textChanged(QString)'), self._absedit)
         QtCore.QObject.connect(self.serverBox,QtCore.SIGNAL('currentIndexChanged(QString)'),self.cambioindici)
         QtCore.QObject.connect(self.buttonConnect,QtCore.SIGNAL('released()'), self.connetti)
         QtCore.QObject.connect(self.usernameEdit, QtCore.SIGNAL('textEdited(QString)'),self._abilitaLogin)
@@ -38,15 +35,16 @@ class Login(QtGui.QDialog, login.Ui_Dialog):
             self.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
     
     def _absedit(self,testo):
-        QtCore.QObject.disconnect(self.portaEdit,QtCore.SIGNAL('textEdited(QString)'), self._absedit)
+        QtCore.QObject.disconnect(self.portaEdit,QtCore.SIGNAL('textChanged(QString)'), self._absedit)
+        testo = testo.replace('-','')
         if(not(testo.isnumeric())):
-            self.portaEdit.setText('')
+            self.portaEdit.setText('1')
         else:
             numero = int(testo)
             numero = abs(numero)
             testo = str(numero)
             self.portaEdit.setText(testo)
-        QtCore.QObject.connect(self.portaEdit,QtCore.SIGNAL('textEdited(QString)'), self._absedit)
+        QtCore.QObject.connect(self.portaEdit,QtCore.SIGNAL('textChanged(QString)'), self._absedit)
     
     def _abilitaLogin(self):
         '''

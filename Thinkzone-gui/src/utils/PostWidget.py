@@ -2,6 +2,7 @@
 Created on 15/lug/2012
 Widget che rappresenta un post per il programma.
 I post hanno un ID che li rende unici.
+Incorpora una textarea modificata per consentire a più utenti di accedervi contemporaneamente.
 @author: stengun
 '''
 from utils import PostArea
@@ -9,7 +10,7 @@ from PyQt4 import QtGui, QtCore
 
 class postWidget(QtGui.QWidget):
     '''
-    Widget che crea l'oggetto "post", capace di essere un post normale o una risposta a un post.
+    Widget che crea l'oggetto "post", visualizzabile nella finestra principale.
     '''
     _label = None
     _textArea = None
