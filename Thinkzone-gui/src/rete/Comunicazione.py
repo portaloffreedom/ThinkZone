@@ -35,11 +35,13 @@ class comunicatore(QtCore.QThread):
     _stop = None
     blink_cursor = None
     _registered = False
+    _utentePrecedente = None
     _utenteAttivo = None
     _userID = None
     _receive_thread = None
     _lastResponse = None
     _activePost = None
+    _lastPost = None
     #robe interne
     _barrier = None
     _cursors = {}
@@ -155,7 +157,7 @@ class comunicatore(QtCore.QThread):
                 return False
             
             if(messaggio== 'U'): # Selezione utente
-                prece = self._utenteAttivo
+                self._utentePrecedente = self._utenteAttivo
                 [self._utenteAttivo,controllo] = self._recvInt()
                 try:
                     self._cursors[self._utenteAttivo]
@@ -164,7 +166,7 @@ class comunicatore(QtCore.QThread):
                     self._cursors[self._utenteAttivo] = (0,0)
                 self._logger.debug("L'utente %s è ora attivo.",str(self._utenteAttivo))
 
-                if(prece != None):
+                if(self._utentePrecedente != None):
                     self.emit(QtCore.SIGNAL('cambiaUtente(int)'),self._activePost)
                     self._barrier.wait()
                 messaggio = self._controller(controllo, messaggio)
@@ -180,6 +182,7 @@ class comunicatore(QtCore.QThread):
                 [idpost,controllo] = self._recvInt()
                 self._logger.debug("Utente %s, seleziona il post %s",str(self._utenteAttivo),str(idpost))
                 messaggio = self._controller(controllo, messaggio)
+                self._lastPost = self._activePost
                 self._activePost = idpost
                 self.emit(QtCore.SIGNAL('selectPost(int)'),idpost)
                 self._barrier.wait()
