@@ -172,9 +172,9 @@ func gestisciTestoConversazione(input chan rune, output chan string) {
 				logs.Error("errore nel lavorare sulla superstringa\n\tultimo comando: ", string(cc), "\n\tmotivo: ", errore.Error())
 				errore = nil
 			} else {
-//				for i := range versoClient {
-//					output <- versoClient[i]
-//				}
+				//				for i := range versoClient {
+				//					output <- versoClient[i]
+				//				}
 				output <- string(versoClient)
 			}
 
@@ -206,6 +206,10 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 	var lastActiveUser int = -1
 	input := make(chan rune, 256)
 	output := make(chan string, 256)
+	logs.AggiungiAzioneDiChiusura(func() {
+		close(input)
+		close(output)
+	})
 
 	go gestisciTestoConversazione(input, output)
 
@@ -221,7 +225,13 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 		}
 	}()
 
-	for {
+	var spegniti bool = false
+
+	logs.AggiungiAzioneDiChiusura(func() {
+		spegniti = true
+	})
+
+	for !spegniti {
 		start := time.Now()
 
 		quanti := len(readiness)
@@ -233,6 +243,7 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 			if lastActiveUser != clientAttivo.user.ID {
 				chiSonoString = strings.Join([]string{"\\U", strconv.Itoa(clientAttivo.user.ID), "\\"}, "")
 				lastActiveUser = clientAttivo.user.ID
+				database.MainConv.UtenteAttivo = lastActiveUser
 			} else {
 				chiSonoString = ""
 			}
@@ -301,16 +312,30 @@ func StartServer(laddress string) {
 		//TODO handle error
 	}
 
-	database.MainConv = database.NewConversation(&database.ServerFakeUser)
+	database.MainConv = database.NewConversation(database.ServerFakeUser)
 
 	//canale := make(chan byte, 256)
 	codaReadiness := make(chan *Client, 64)
 	codaAccettazioni := make(chan *Client, 64)
+	logs.AggiungiAzioneDiChiusura(func() {
+		close(codaReadiness)
+		close(codaAccettazioni)
+	})
 
 	go spedisci(codaAccettazioni, codaReadiness)
 
-	for {
+	var spegniti bool = false
+
+	logs.AggiungiAzioneDiChiusura(func() {
+		spegniti = true
+		ln.Close()
+	})
+
+	for !spegniti {
 		conn, err := ln.Accept()
+		if spegniti {
+			return
+		}
 		if err != nil {
 			//TODO fare un pacchetto per la raccolta degli errori
 			logs.Error("Tentativo di connessione non andato a buon fine: ", err.Error())

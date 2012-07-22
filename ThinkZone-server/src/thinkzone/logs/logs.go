@@ -4,7 +4,6 @@ package logs
 import (
 	"fmt"
 	"os"
-	"os/signal"
 	"strconv"
 	"strings"
 	"time"
@@ -53,43 +52,31 @@ func init() {
 
 	logFile.WriteString("File di log del server di ThinkZone\n")
 
-	logFileLock <- 0
+	logFileLock <- 0 //abilita la prima scrittura sul log
+}
 
-	//parte per la gestione della chiusura del server
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
+// Questa funzione chiude il file di log. Da chiamare come procedura per chiudere il 
+// server
+func ChiudiLog() {
+	<-logFileLock
+	fmt.Println("chiusura del file di log in corso")
+	if logFile != nil {
+		logFile.Close()
+	} else {
 
-	go func(c chan os.Signal) {
-		sig := <-c
-		//		if s == os.Kill {
-		fmt.Println("\nsegnale catturato:", sig)
-		fmt.Println("chiusura del file di log in corso")
-		if logFile != nil {
-			logFile.Close()
-		} else {
-
-			//TODO lock sulla scrittura sul log
-			fmt.Println("impossibile chiudere il file di log")
-		}
-		//		}
-		myself, err := os.FindProcess(os.Getpid())
-		if err != nil {
-			fmt.Println("ma che cazz? non riesco a trovare me stesso?\n\tmotivo:", err)
-			return
-		}
-		myself.Signal(os.Kill) //TODO migliorare questa uscita
-
-		return
-	}(c)
+		//TODO lock sulla scrittura sul log
+		fmt.Println("impossibile chiudere il file di log")
+	}
+	return
 }
 
 // Imposta se i messaggi di log devono essere stampati anche a terminale
 // (i messaggi di errore saranno stampati a terminale comunque)
 func StampaSuTerminale(stampa bool) {
 	<-logFileLock
-	
+
 	stampa_su_terminale = stampa
-	
+
 	logFileLock <- 0
 }
 

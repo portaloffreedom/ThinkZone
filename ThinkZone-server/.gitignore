@@ -1,0 +1,8 @@
+.project
+ThinkZoneServer
+bin/
+pkg/
+src/thinkzone/database/src/
+src/thinkzone/network/src/
+thinkzone-server_20-July-2012_18.18.58.log
+

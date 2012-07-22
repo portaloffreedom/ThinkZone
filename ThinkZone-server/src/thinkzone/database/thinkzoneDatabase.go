@@ -2,17 +2,19 @@
 package database
 
 import (
-	//"fmt"
 	"bytes"
 	"crypto/sha256"
-	"hash"
+	"database/sql"
+	"thinkzone/logs"
+
+//	"thinkzone/network"
 )
 
 // Struttura dati che memorizza i dati dell'utente
 type User struct {
-	ID       int       // Codice intero univoco identificativo dell'utente
-	Username string    // Username
-	password hash.Hash // Hash della password vera
+	ID       int    // Codice intero univoco identificativo dell'utente
+	Username string // Username
+	password []byte // Hash della password vera
 }
 
 // Struttura dati core del dababase: tiene memorizzati tutti gli utenti
@@ -25,12 +27,15 @@ type DatabaseRegistration struct {
 // variabili globali per il funzionamento del Database
 var (
 	//Utente fake che rappresenta il server
-	ServerFakeUser User = User{42, "server", sha256.New()}
+	ServerFakeUser *User = nil
 	// Conversazione principale attiva (da eliminare quando vengono implementate
 	// più conversazioni per server
-	MainConv *Conversation = NewConversation(&ServerFakeUser)
+	MainConv *Conversation = nil
 	// Database principale in cui vengono resgistrati tutti gli utenti
 	Data DatabaseRegistration = DatabaseRegistration{make(map[string]*User), make(map[int]*User), 0}
+
+	// Database in cui registrare i dati del server
+	db *sql.DB
 )
 
 // Questa funzione connette un nuovo utente al database (in pratica ne verifica 
@@ -51,6 +56,7 @@ func (datab *DatabaseRegistration) ConnectUser(s string) (user *User, newuser bo
 func (datab *DatabaseRegistration) RegisterNewUser(username, password string) (user *User, success bool) {
 
 	var present bool
+	success = false
 
 	if user, present = datab.userNameToId[username]; !present {
 		datab.contatore++
@@ -59,15 +65,21 @@ func (datab *DatabaseRegistration) RegisterNewUser(username, password string) (u
 		user.Username = username
 		hashpassword := sha256.New()
 		hashpassword.Write([]byte(password))
-		user.password = hashpassword
+		user.password = hashpassword.Sum([]byte{})
+
+		err := salvaUtente(user)
+		if err != nil {
+			logs.Error(err.Error())
+			return nil, false
+		}
 
 		datab.userNameToId[username] = user
 		datab.userIDtoUser[user.ID] = user
 
 		success = true
+
 	} else {
-		success = false
-		user = nil
+		return nil, false
 	}
 
 	return
@@ -94,5 +106,58 @@ func (datab *DatabaseRegistration) GetUserByID(id int) *User {
 func (user *User) VerifyPassword(passwordInput string) bool {
 	hashinput := sha256.New()
 	hashinput.Write([]byte(passwordInput))
-	return bytes.Equal(hashinput.Sum([]byte{}), user.password.Sum([]byte{}))
+	//	fmt.Println("paragone password:")
+	//	fmt.Printf("input:_%v_\n", (hashinput.Sum([]byte{})))
+	//	fmt.Printf("datab:_%v_\n", (user.password))
+	return bytes.Equal(hashinput.Sum([]byte{}), user.password)
+}
+
+// Inizializza tutte le operazioni necessarie per sul database
+func init() {
+	logs.Log("init del database")
+
+	ServerFakeUser = new(User)
+	ServerFakeUser.ID = 0
+	ServerFakeUser.Username = "server"
+	serverPassword := sha256.New()
+	serverPassword.Write([]byte("toor"))
+	ServerFakeUser.password = serverPassword.Sum([]byte{})
+
+	MainConv = NewConversation(ServerFakeUser)
+
+	err := CreateDataBase()
+	if err != nil {
+		logs.Error(err.Error())
+	}
+
+	//	err = salvaUtente(ServerFakeUser)
+	//	if err != nil {
+	//		logs.Error("Impossibile salvare l'utente server nel database\nmotivo: ", err.Error())
+	//	}()
+
+	Data.CaricaUtenti()
+	if err != nil {
+		logs.Error("Impossibile caricare gli utenti dal database\nmotivo: ", err.Error())
+	}
+
+	logs.AggiungiAzioneDiChiusura(func() {
+		if insertUserOp != nil {
+			insertUserOp.Close()
+		}
+		if insertPostOp != nil {
+			err := MainConv.salvaTutteLeConversazioni()
+			if err != nil {
+				logs.Error("Impossibile salvare tutti i post\nmotivo: ", err.Error())
+			}
+			insertConvOp.Close()
+		}
+		if insertPostOp != nil {
+			err := MainConv.salvaTuttiIPost(&Data)
+			if err != nil {
+				logs.Error("Impossibile salvare tutti i post\nmotivo: ", err.Error())
+			}
+			insertPostOp.Close()
+		}
+		return
+	})
 }

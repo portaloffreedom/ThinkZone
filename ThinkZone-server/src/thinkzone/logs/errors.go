@@ -3,6 +3,7 @@ package logs
 
 import (
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -12,7 +13,6 @@ func Error(messageArray ...string) {
 	message := strings.Join(messageArray, "")
 	message = strings.Join([]string{"#ERROR#", message}, " ")
 
-	fmt.Println(message)
-
+	fmt.Fprintln(os.Stderr, message)
 	stampaSuFile(message)
 }
