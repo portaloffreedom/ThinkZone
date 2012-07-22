@@ -15,7 +15,7 @@ func main() {
 	fmt.Println("Benvenuto su ThinkZone!")
 	logs.StampaSuTerminale(true)
 
-	network.StartServer(":80")
+	network.StartServer(":4240")
 	//	StartServer(":80")
 
 }

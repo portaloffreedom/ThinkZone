@@ -1,0 +1,44 @@
+Thinkzone - This is not a kind of Zoocial network.
+Versione 0.1.0 alpha - Jelly teen
+
+Requirements:
+Pyqt4
+Python 3.2
+
+Utilizzo del programma:
+- Linux:
+	Assicuratevi di avere installate le librerie adatte necessari per l'avvio del programma.
+	pacchetti per distribuzioni debian based:
+		python3-pyqt4
+		python3
+	Arch Linux:
+		Pyqt4
+		python
+	Avviare il programma da terminale usando lo script "start_linux.sh".
+
+- Windows:
+	Assicuratevi di avere installate le librerie e i programmi necessari all'avvio del programma.
+
+	Download di python3:
+		32bit: http://www.python.org/ftp/python/3.2.3/python-3.2.3.msi
+		64bit: http://www.python.org/ftp/python/3.2.3/python-3.2.3.amd64.msi
+	Download di Pyqt4:
+		32bit: http://www.riverbankcomputing.co.uk/static/Downloads/PyQt4/PyQt-Py3.2-x86-gpl-4.9.4-1.exe
+		64bit: http://www.riverbankcomputing.co.uk/static/Downloads/PyQt4/PyQt-Py3.2-x64-gpl-4.9.4-1.exe
+	Avviare il programma da riga di comando usando il file "start_windows.bat"
+
+
+Aggiungere l'opzione -h per visualizzare tutti gli argomenti utilizzabili.
+Il programma non si avvierà se non specificate almeno un argomento (se specificate --gui non potete usare -r).
+
+L'interfaccia grafica:
+L'interfaccia permette di registrarsi e collegarsi a un server THINKZONE. La registrazione è effettuabile anche da riga di comando.
+Per collegarsi cliccare sul menu FILE, login. Nella finestra inserire nome utente e password.
+Una volta riempiti questi campi, il tasto registrati e il tasto connetti si attiveranno.
+La registrazione utilizza come dati il nome utente e la password che avete inserito.
+È possibile effettuare il login su un server dove ci si è già registrati. Il programma segnalerà quando provate a collegarvi ad un server dove non siete registrati.
+Una volta registrati e dopo aver effettuato il login, potremo creare una nuova conversazione con un titolo. Attualmente, non è possibile creare più di una conversazione, il tasto crea funzionerà come un tasto "rispondi", creando una risposta alla conversazione iniziale.
+La lista conversazioni a sinistra, per tanto, non visualizzerà conversazioni. È possibile disattivarla dal menu visualizza.
+Attualmente anche l'eliminazione delle risposte non è consentita.
+Il programma adesso è utilizzabile. Potete scrivere, creare risposte e scrivere sui post che creano le altre persone.
+Allo stadio attuale, il programma è una alpha build.

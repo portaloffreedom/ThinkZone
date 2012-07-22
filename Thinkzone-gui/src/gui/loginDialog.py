@@ -4,7 +4,6 @@ Costruisce la finestra di login dalla classe di PyQt4
 @author: stengun
 '''
 import sys
-from utils import PostArea
 from gui import login,aboutDialog
 from PyQt4 import QtGui, QtCore
 
@@ -21,18 +20,34 @@ class Login(QtGui.QDialog, login.Ui_Dialog):
     def __init__(self, parent = None):
         QtGui.QDialog.__init__(self, parent)
         self._parent = parent
-        self._textextended = PostArea.Post()
         self._aboutwindow = aboutDialog.aboutDial()
         self._connettore = parent._connettore
         self.setupUi(self)
         self.serverBox.addItems(['Server personalizzato','localhost:4242','192.168.0.42:4242','portaloffreedom.is-a-geek.org:4242'])
-
+        QtCore.QObject.connect(self.portaEdit,QtCore.SIGNAL('textEdited(QString)'), self._absedit)
         QtCore.QObject.connect(self.serverBox,QtCore.SIGNAL('currentIndexChanged(QString)'),self.cambioindici)
-        QtCore.QObject.connect(self.buttonConnect,QtCore.SIGNAL('pressed()'), self.connetti)
+        QtCore.QObject.connect(self.buttonConnect,QtCore.SIGNAL('released()'), self.connetti)
         QtCore.QObject.connect(self.usernameEdit, QtCore.SIGNAL('textEdited(QString)'),self._abilitaLogin)
         QtCore.QObject.connect(self.passwordEdit, QtCore.SIGNAL('textEdited(QString)'),self._abilitaLogin)
-        QtCore.QObject.connect(self.buttonRegister,QtCore.SIGNAL('pressed()'), self.registrati)
-        
+        QtCore.QObject.connect(self.buttonRegister,QtCore.SIGNAL('released()'), self.registrati)
+    
+    def _setwait(self,boolean):
+        if(boolean):
+            self.setCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+        else:
+            self.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
+    
+    def _absedit(self,testo):
+        QtCore.QObject.disconnect(self.portaEdit,QtCore.SIGNAL('textEdited(QString)'), self._absedit)
+        if(not(testo.isnumeric())):
+            self.portaEdit.setText('')
+        else:
+            numero = int(testo)
+            numero = abs(numero)
+            testo = str(numero)
+            self.portaEdit.setText(testo)
+        QtCore.QObject.connect(self.portaEdit,QtCore.SIGNAL('textEdited(QString)'), self._absedit)
+    
     def _abilitaLogin(self):
         '''
         Imposta attivato o disattivato i pulsanti per connettersi (o registrarsi)
@@ -61,18 +76,12 @@ class Login(QtGui.QDialog, login.Ui_Dialog):
             self.portaEdit.setText(porta)
             self.widget_hostname.setEnabled(False)
     
-#    def dati_rimossi(self,posizione,rimossi):
-#        #print('ci sono')
-#        self._connettore.spedisci_rimozione(posizione,rimossi)
-#    
-#    def dati_aggiunti(self,posizione,aggiunti):
-#        self._connettore.spedisci_aggiunta(posizione,aggiunti)
-    
     def registrati(self):
         '''
         Metodo chiamato quando si preme il pulsante di registrazione a un server.
         Invia nome utente e password inseriti come dati di registrazione.
         '''
+        self._setwait(True)
         hostname = self.hostEdit.text()
         nickname = self.usernameEdit.text()
         password = self.passwordEdit.text()
@@ -80,22 +89,27 @@ class Login(QtGui.QDialog, login.Ui_Dialog):
         porta = porta.encode()
         if(porta == '' or hostname == ''):
             print('Non puoi avere un campo vuoto su Host e Porta!',file=sys.stderr)
+            self._setwait(False)
             return
         porta = int(porta)
         self._connettore.registrati(hostname, porta, nickname, password)
+        self._setwait(False)
     
     def connetti(self):
         '''
         Metodo chiamato quando si preme il pulsante di connessione.
         '''
+        self._setwait(True)
         porta = self.portaEdit.text()
         porta = porta.encode()
         hostname = self.hostEdit.text()
         if(porta == '' or hostname == ''):
             print('Non puoi avere un campo vuoto su Host e Porta!',file=sys.stderr)
+            self._setwait(False)
             return
         porta = int(porta)
         self._connettore.connetti(hostname, porta,self.usernameEdit.text(),self.passwordEdit.text())
         self._connettore.start()
         self._parent._connettore = self._connettore
+        self._setwait(False)
         self.close()
