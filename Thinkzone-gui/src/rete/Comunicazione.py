@@ -141,7 +141,6 @@ class comunicatore(QtCore.QThread):
                 return False
             
             if(messaggio == 'D'): # Eliminazione
-                print('caso D')
                 [quantita, controllo] = self._recvInt()
                 self._cursors[self._utenteAttivo] = ((self._cursors[self._utenteAttivo][0] - quantita),self._activePost)
                 messaggio = self._controller(controllo, messaggio)
@@ -179,6 +178,8 @@ class comunicatore(QtCore.QThread):
             
             if(messaggio == 'P'):#selezione post
                 [idpost,controllo] = self._recvInt()
+                if(self._userID == self._utenteAttivo):
+                    return False
                 self._logger.debug("Utente %s, seleziona il post %s",str(self._utenteAttivo),str(idpost))
                 messaggio = self._controller(controllo, messaggio)
                 self._activePost = idpost
