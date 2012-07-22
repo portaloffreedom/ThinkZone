@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"database/sql"
+	"fmt"
 	"thinkzone/logs"
 
 //	"thinkzone/network"
@@ -36,14 +37,6 @@ var (
 
 	// Database in cui registrare i dati del server
 	db *sql.DB
-
-	// Script in SQL per creare le tabelle nel database 
-	createDbSqlScript []string = []string{
-		"CREATE TABLE t_user ( id INT PRIMARY KEY, username CHAR(64) NOT NULL UNIQUE, password CHAR(256) NOT NULL)",
-		"CREATE TABLE conversation ( id INT PRIMARY KEY )",
-		"CREATE TABLE archive ( t_user INT, conversation INT, PRIMARY KEY (t_user,conversation), FOREIGN KEY (t_user) REFERENCES t_user(id), FOREIGN KEY (conversation) REFERENCES conversation(id))",
-		"CREATE TABLE post ( id INT NOT NULL, conversation INT NOT NULL, text CHAR(1024), pather INT, first_response INT, second_response INT, PRIMARY KEY (id, conversation), FOREIGN KEY (conversation) REFERENCES conversation(id))",                     //, FOREIGN KEY (pather) REFERENCES post(id), FOREIGN KEY (first_response) REFERENCES post(id), FOREIGN KEY (second_response) REFERENCES post(id))",
-		"CREATE TABLE author ( t_user INT NOT NULL, post INT NOT NULL, conversation INT NOT NULL, PRIMARY KEY (t_user,conversation, post), FOREIGN KEY (t_user) REFERENCES t_user(id), FOREIGN KEY (post, conversation) REFERENCES post(id, conversation))"} //, FOREIGN KEY (conversation) REFERENCES post(conversation))"}
 )
 
 // Questa funzione connette un nuovo utente al database (in pratica ne verifica 
@@ -114,14 +107,11 @@ func (datab *DatabaseRegistration) GetUserByID(id int) *User {
 func (user *User) VerifyPassword(passwordInput string) bool {
 	hashinput := sha256.New()
 	hashinput.Write([]byte(passwordInput))
+	fmt.Println("paragone password:")
+	//	fmt.Printf("input:_%v_\n", (hashinput.Sum([]byte{})))
+	//	fmt.Printf("datab:_%v_\n", (user.password))
 	return bytes.Equal(hashinput.Sum([]byte{}), user.password)
 }
-
-// variabili per gestire il database
-var (
-	insertUser   string    = "INSERT INTO t_user VALUES ($1, $2, $3)"
-	insertUserOp *sql.Stmt = nil
-)
 
 func init() {
 	logs.Log("init del database")
@@ -137,7 +127,7 @@ func init() {
 
 	err := CreateDataBase()
 	if err != nil {
-		//logs.Error(err.Error())
+		logs.Error(err.Error())
 	}
 
 	insertUserOp, err = db.Prepare(insertUser)
@@ -145,10 +135,10 @@ func init() {
 		logs.Error("Impossibile salvare gli utenti nel database\nmotivo: ", err.Error())
 	}
 
-	//err = salvaUtente(ServerFakeUser)
-	if err != nil {
-		//logs.Error("Impossibile salvare l'utente server nel database\nmotivo: ", err.Error())
-	}
+	//	err = salvaUtente(ServerFakeUser)
+	//	if err != nil {
+	//		logs.Error("Impossibile salvare l'utente server nel database\nmotivo: ", err.Error())
+	//	}()
 
 	Data.CaricaUtenti()
 	if err != nil {
