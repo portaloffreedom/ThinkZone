@@ -55,7 +55,7 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
         QtCore.QObject.connect(self.actionInformazioni_su,QtCore.SIGNAL("triggered()"),self._aboutDialog.show)
         QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('nuovoPost(int)'),self._creapost,2)
         QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('selectPost(int)'),self._selpost,2)
-        #QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('cambiaUtente(int,int)'),self._cambiautente,2)
+        QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('cambiaUtente(int)'),self._cambiautente,2)
         self._creapost(0)
         self.layout_titolo.addWidget(self._postids[0])
         self._barrier = Barrier(2, timeout=200)
@@ -101,13 +101,10 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
             QtCore.QObject.disconnect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),selezionato.aggiungiTesto)
             self._logger.debug("Deselezionato il post"+str(idpost))
     
-#    def _cambiautente(self,precedente,attuale):
-#        #print('CAMBIO UTENTE')
-#        if(precedente == 0):
-#            #self.titoloLabel.setText('Titolo: '+self.titoloLabel.text())
-#            QtCore.QObject.disconnect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),self._setTitolo)
-#            #self._connettore._activePost = None
-#        self._barrier.wait()
+    def _cambiautente(self,attuale):
+        self._deselectPost(attuale)
+        self._selectPost(self._connettore._cursors[self._connettore._utenteAttivo][1])
+        self._barrier.wait()
     
     def _selpost(self,idpost):
         precedente = self._connettore._cursors[self._connettore._utenteAttivo][1]
@@ -119,15 +116,7 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
 #                QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),self._setTitolo,2)
 #                self._settato = True
         self._connettore._cursors[self._connettore._utenteAttivo] = (self._connettore._cursors[self._connettore._utenteAttivo][0],idpost)
-        
         self._barrier.wait()
-    
-#    def _setTitolo(self,indi,stringa):
-#        if(stringa != ''):
-#            self._logger.debug("Impostazione titolo discussione: "+stringa)
-#            self.titoloLabel.setText(self.titoloLabel.text()+stringa)
-#            self.titoloEdit.setDisabled(True)
-#            self.titoloEdit.setHidden(True)
         
     def _creapost(self,idpost):
         '''
