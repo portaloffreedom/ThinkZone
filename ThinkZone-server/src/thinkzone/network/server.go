@@ -254,8 +254,12 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 			var daLeggere int = clientAttivo.stream.Reader.Buffered()
 			buffer := make([]rune, chiSonoSSize+daLeggere)
 			var err error
-			for i := chiSonoSSize; i < chiSonoSSize+daLeggere; i++ {
-				buffer[i], _, err = clientAttivo.stream.ReadRune()
+			var size int
+			fmt.Println("Da leggere:",daLeggere," chiSonoSize:",chiSonoSSize, "buffersize:",len(buffer),":",cap(buffer))
+			for i,j := chiSonoSSize, 0; i < chiSonoSSize+daLeggere && j < daLeggere; i++ {
+				buffer[i], size, err = clientAttivo.stream.ReadRune()
+				j += size
+				fmt.Printf("#####size:_%v_ carattere:_%v_%v_\n",strconv.Itoa(size),string(buffer[i]),buffer[i])
 				//				toSuperString <- buffer[i]
 				if err != nil {
 					//TODO gestisci errore
@@ -265,6 +269,7 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 					break
 				}
 			}
+			fmt.Println("####finito caratteri")
 			clientAttivo.blocco <- 0
 
 			//prepara il buffer da spedire

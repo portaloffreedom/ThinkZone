@@ -30,11 +30,6 @@ func (conv *Conversation) NewPost(creator *User, padre *Post) *Post {
 	conv.contatorePost++
 	conv.postMap[post.idPost] = post
 
-	err := Data.creaPostSQL(conv, post)
-	if err != nil {
-		logs.Error("Impossibile creare il post sul database\nmotivo:", err.Error())
-	}
-
 	return post
 }
 
@@ -58,13 +53,26 @@ func (post *Post) del(user *User, pos int, howmany int) {
 // crea un post di risposta al post invocato (con la struttura dati già
 // inizializzata per bene)
 func (post *Post) Respond(conv *Conversation, user *User) (*Post, error) {
+	registra := func(post *Post) {
+		err := Data.creaPostSQL(conv, post)
+		if err != nil {
+			logs.Error("Impossibile creare il post sul database\nmotivo:", err.Error())
+		}
+		err = Data.salvaPostSQL(conv, post.padre)
+		if err != nil {
+			logs.Error("Impossibile aggiornare il post padre sul database\nmotivo:", err.Error())
+		}
+	}
+
 	response := conv.NewPost(user, post)
 	if post.rispostaPrincipale == nil {
 		post.rispostaPrincipale = response
+		registra(response)
 		return response, nil
 	}
 	if post.rispostaSecondaria == nil {
 		post.rispostaSecondaria = response
+		registra(response)
 		return response, nil
 	}
 	return nil, NewConversationError("Impossibile attaccare più di due risposte ad un solo post", conv)

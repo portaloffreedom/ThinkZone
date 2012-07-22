@@ -56,18 +56,21 @@ func GestisciClient(conn net.Conn) (*Client, func(chan *Client)) {
 		})
 
 		for !spegniti {
-			_, _, err := client.stream.ReadRune()
+			_, size, err := client.stream.ReadRune()
 			if err != nil {
 				logs.Error("connessione interrotta: ", conn.RemoteAddr().String(), "\n\tmotivazione: ", err.Error())
 				client.gestisciDisconnessione(database.MainConv)
 				return
 			}
+			//			for i := 0; i < size; i++ {
+			fmt.Printf("letto carattere di %v byte\n", size)
 			err = client.stream.UnreadRune()
 			if err != nil {
 				logs.Error("impossibile fare UnreadByte: ", conn.RemoteAddr().String(), "\n\tmotivazione: ", err.Error())
 				client.gestisciDisconnessione(database.MainConv)
 				return
 			}
+			//			}
 
 			readiness <- client
 			<-client.blocco
