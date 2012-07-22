@@ -178,8 +178,6 @@ class comunicatore(QtCore.QThread):
             
             if(messaggio == 'P'):#selezione post
                 [idpost,controllo] = self._recvInt()
-                if(self._userID == self._utenteAttivo):
-                    return False
                 self._logger.debug("Utente %s, seleziona il post %s",str(self._utenteAttivo),str(idpost))
                 messaggio = self._controller(controllo, messaggio)
                 self._activePost = idpost

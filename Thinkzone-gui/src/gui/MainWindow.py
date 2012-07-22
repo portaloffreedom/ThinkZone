@@ -107,15 +107,12 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
         self._barrier.wait()
     
     def _selpost(self,idpost):
-        precedente = self._connettore._cursors[self._connettore._utenteAttivo][1]
-        if(precedente != None):
-            self._deselectPost(precedente)
-        self._selectPost(idpost)
-#        else:
-#            if(not(self._settato)):
-#                QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('aggiunta(int,QString)'),self._setTitolo,2)
-#                self._settato = True
-        self._connettore._cursors[self._connettore._utenteAttivo] = (self._connettore._cursors[self._connettore._utenteAttivo][0],idpost)
+        if(self._connettore._userID != self._connettore._utenteAttivo):
+            precedente = self._connettore._cursors[self._connettore._utenteAttivo][1]
+            if(precedente != None):
+                self._deselectPost(precedente)
+            self._selectPost(idpost)
+            self._connettore._cursors[self._connettore._utenteAttivo] = (self._connettore._cursors[self._connettore._utenteAttivo][0],idpost)
         self._barrier.wait()
         
     def _creapost(self,idpost):
