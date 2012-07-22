@@ -26,6 +26,8 @@ var (
 	//Operazioni per gestire le conversazioni
 	insertConv   string    = "INSERT INTO conversation VALUES ($1)"
 	insertConvOp *sql.Stmt = nil
+	updateConv   string    = "UPDATE conversation SET id = $1"
+	updateConvOp *sql.Stmt = nil
 
 	// Script in SQL per creare le tabelle nel database 
 	createDbSqlScript []string = []string{
@@ -81,6 +83,34 @@ func CreateDataBaseSQL() error {
 		//		logs.Error("Impossibile salvare le conversazioni nel database\nmotivo: ", err.Error())
 		return err
 	}
+
+	updateConvOp, err = db.Prepare(updateConv)
+	if err != nil {
+		return err
+	}
+
+	logs.AggiungiAzioneDiChiusura(func() {
+		if insertUserOp != nil {
+			insertUserOp.Close()
+		}
+		if insertConvOp != nil {
+			err := MainConv.salvaTutteLeConversazioniSQL()
+			if err != nil {
+				logs.Error("Impossibile salvare tutti i post\nmotivo: ", err.Error())
+			}
+			insertConvOp.Close()
+		}
+		if insertPostOp != nil {
+			insertPostOp.Close()
+		}
+		if updatePostOp != nil {
+			updatePostOp.Close()
+		}
+		if updateConvOp != nil {
+			updateConvOp.Close()
+		}
+		return
+	})
 
 	return nil
 
@@ -216,13 +246,12 @@ func (post *Post) salvaPostRicSQL(conv *Conversation, data *DatabaseRegistration
 }
 
 func (conv *Conversation) salvaTutteLeConversazioniSQL() error {
-	_, err := insertConvOp.Exec(0)
+	_, err := updateConvOp.Exec(0)
 	if err != nil {
 		logs.Error("Impossibile salvare la conversazione ", strconv.Itoa(conv.ID), " nel database")
 		return err
 	}
-	return nil
-
+	return conv.salvaTuttiIPostSQL(&Data)
 }
 
 func (datab *DatabaseRegistration) caricaConversazioni() error {

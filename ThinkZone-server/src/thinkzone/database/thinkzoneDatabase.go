@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"thinkzone/logs"
+	"time"
 
 //	"thinkzone/network"
 )
@@ -144,24 +145,23 @@ func init() {
 		logs.Error("Impossibile caricare gli utenti dal database\nmotivo: ", err.Error())
 	}
 
-	logs.AggiungiAzioneDiChiusura(func() {
-		if insertUserOp != nil {
-			insertUserOp.Close()
-		}
-		if insertPostOp != nil {
+	go func() {
+		var spegniti bool = false
+		logs.AggiungiAzioneDiChiusura(func() { spegniti = true })
+
+		tk := time.NewTicker(1 * time.Minute)
+		for !spegniti {
+			<-tk.C
 			err := MainConv.salvaTutteLeConversazioniSQL()
 			if err != nil {
 				logs.Error("Impossibile salvare tutti i post\nmotivo: ", err.Error())
 			}
-			insertConvOp.Close()
+			logs.Log("salvate tutte le conversazioni sul database")
+			//err := MainConv.salvaTuttiIPostSQL(&Data)
+			//if err != nil {
+			//	logs.Error("Impossibile salvare tutti i post\nmotivo: ", err.Error())
+			//}
 		}
-		if insertPostOp != nil {
-			err := MainConv.salvaTuttiIPostSQL(&Data)
-			if err != nil {
-				logs.Error("Impossibile salvare tutti i post\nmotivo: ", err.Error())
-			}
-			insertPostOp.Close()
-		}
-		return
-	})
+		tk.Stop()
+	}()
 }
