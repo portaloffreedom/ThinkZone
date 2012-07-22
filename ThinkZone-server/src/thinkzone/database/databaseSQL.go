@@ -39,6 +39,8 @@ var (
 
 )
 
+// Funzione che inizializza tutte le cose necessarie per collegare il
+// database SQL, e lo collega
 func CreateDataBaseSQL() error {
 	var err error
 
@@ -48,17 +50,19 @@ func CreateDataBaseSQL() error {
 		return err
 	}
 
-	for i := range createDbSqlScript {
-		_, err = db.Exec(createDbSqlScript[i])
-		if err != nil {
-			if "result error: ERROR:  relation \"t_user\" already exists\n" != err.Error() {
-				logs.Error("Impossibile creare le tabelle del database\nmotivo: _", err.Error(), "_")
-				return err
+	/*
+		for i := range createDbSqlScript {
+			_, err = db.Exec(createDbSqlScript[i])
+			if err != nil {
+				if "result error: ERROR:  relation \"t_user\" already exists\n" != err.Error() {
+					logs.Error("Impossibile creare le tabelle del database\nmotivo: _", err.Error(), "_")
+					return err
+				}
+				break
 			}
-			break
-		}
 
-	}
+		}
+	*/
 
 	insertUserOp, err = db.Prepare(insertUser)
 	if err != nil {
@@ -116,6 +120,7 @@ func CreateDataBaseSQL() error {
 
 }
 
+// salva un utente nel database
 func salvaUtenteSQL(user *User) error {
 
 	_, err := insertUserOp.Exec(user.ID, user.Username, user.password)
@@ -127,6 +132,7 @@ func salvaUtenteSQL(user *User) error {
 	return nil
 }
 
+// Carica tutti gli utenti dal database nella memoria principale
 func (datab *DatabaseRegistration) CaricaUtentiSQL() error {
 
 	rows, err := db.Query("SELECT * FROM t_user")
@@ -162,6 +168,8 @@ func (datab *DatabaseRegistration) CaricaUtentiSQL() error {
 	return nil
 }
 
+// crea il post dentro il database. Ogni post deve essere creato prima di 
+// potere essere salvato.
 func (datab *DatabaseRegistration) creaPostSQL(conv *Conversation, post *Post) error {
 	logs.Log("creo post ", strconv.Itoa(post.idPost))
 
@@ -186,8 +194,9 @@ func (datab *DatabaseRegistration) creaPostSQL(conv *Conversation, post *Post) e
 
 }
 
+// Fa il flush del post nel database
 func (datab *DatabaseRegistration) salvaPostSQL(conv *Conversation, post *Post) error {
-	logs.Log("salvo post ", strconv.Itoa(post.idPost))
+	//logs.Log("salvo post ", strconv.Itoa(post.idPost))
 	var idPadre, idRPri, idRSec int = -1, -1, -1
 	if post.padre != nil {
 		idPadre = post.padre.idPost
@@ -209,6 +218,7 @@ func (datab *DatabaseRegistration) salvaPostSQL(conv *Conversation, post *Post) 
 	return nil
 }
 
+// Fa il flush sul database di tutti i post relativi alla conversazione
 func (conv *Conversation) salvaTuttiIPostSQL(data *DatabaseRegistration) error {
 	messaggio := "salvataggio di tutti i post sul database"
 	logs.Log(messaggio)
@@ -223,6 +233,8 @@ func (conv *Conversation) salvaTuttiIPostSQL(data *DatabaseRegistration) error {
 	return err
 }
 
+// Subrutine di salvaTuttiIPostSQL:
+// per potere salvare tutti i post sfrutto le funzioni ricorsive
 func (post *Post) salvaPostRicSQL(conv *Conversation, data *DatabaseRegistration) error {
 
 	err := data.salvaPostSQL(conv, post)
@@ -245,6 +257,9 @@ func (post *Post) salvaPostRicSQL(conv *Conversation, data *DatabaseRegistration
 	return nil
 }
 
+// Fa il flush di tutte le conversazioni sul database
+//
+// Ancora finto: salva solamente la conversazione principale
 func (conv *Conversation) salvaTutteLeConversazioniSQL() error {
 	_, err := updateConvOp.Exec(0)
 	if err != nil {
@@ -254,6 +269,10 @@ func (conv *Conversation) salvaTutteLeConversazioniSQL() error {
 	return conv.salvaTuttiIPostSQL(&Data)
 }
 
+// Carica le conversazioni dal database. Da utilizzare all'avvio del server
+//
+// BUG: carica tutte le conversazioni tiene il puntatore solo dell'ultima 
+// in MainConv
 func (datab *DatabaseRegistration) caricaConversazioni() error {
 
 	rows, err := db.Query("SELECT * FROM conversation")
@@ -287,6 +306,7 @@ func (datab *DatabaseRegistration) caricaConversazioni() error {
 	return nil
 }
 
+// carica in memoria tutti i post della conversazione dal database
 func (conv *Conversation) caricaPost() error {
 
 	query, err := db.Prepare("SELECT id,father,text,first_response,second_response FROM post WHERE conversation = $1")

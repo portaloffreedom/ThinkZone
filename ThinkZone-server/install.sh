@@ -1,6 +1,6 @@
 #!/bin/bash
 
-initdb -D .
+initdb -U thinkzone -D thinkzoneDB
 postgres -D . >postgres.log 2>&1 &
 createdb thinkzoneDB
 psql -d thinkzoneDB -f ./src/thinkzone/database/create_database.sql
