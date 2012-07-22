@@ -111,3 +111,4 @@ class Login(QtGui.QDialog, login.Ui_Dialog):
         self._parent._connettore = self._connettore
         self._setwait(False)
         self.close()
+        self._parent.widget.setEnabled(True)
