@@ -172,9 +172,9 @@ func gestisciTestoConversazione(input chan rune, output chan string) {
 				logs.Error("errore nel lavorare sulla superstringa\n\tultimo comando: ", string(cc), "\n\tmotivo: ", errore.Error())
 				errore = nil
 			} else {
-//				for i := range versoClient {
-//					output <- versoClient[i]
-//				}
+				//				for i := range versoClient {
+				//					output <- versoClient[i]
+				//				}
 				output <- string(versoClient)
 			}
 
@@ -206,6 +206,10 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 	var lastActiveUser int = -1
 	input := make(chan rune, 256)
 	output := make(chan string, 256)
+	logs.AggiungiAzioneDiChiusura(func() {
+		close(input)
+		close(output)
+	})
 
 	go gestisciTestoConversazione(input, output)
 
@@ -221,7 +225,13 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 		}
 	}()
 
-	for {
+	var spegniti bool = false
+
+	logs.AggiungiAzioneDiChiusura(func() {
+		spegniti = true
+	})
+
+	for !spegniti {
 		start := time.Now()
 
 		quanti := len(readiness)
@@ -233,22 +243,26 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 			if lastActiveUser != clientAttivo.user.ID {
 				chiSonoString = strings.Join([]string{"\\U", strconv.Itoa(clientAttivo.user.ID), "\\"}, "")
 				lastActiveUser = clientAttivo.user.ID
+				database.MainConv.UtenteAttivo = lastActiveUser
 			} else {
 				chiSonoString = ""
 			}
 			chiSonoSSize := len(chiSonoString)
-			//fmt.Printf("dimensione di %s: %d\n", chiSonoString, chiSonoSSize)
 
 			//leggi cosa spedire
 			var daLeggere int = clientAttivo.stream.Reader.Buffered()
-			buffer := make([]rune, chiSonoSSize+daLeggere)
+			buffer := make([]rune, chiSonoSSize, daLeggere+chiSonoSSize)
 			var err error
-			for i := chiSonoSSize; i < chiSonoSSize+daLeggere; i++ {
-				buffer[i], _, err = clientAttivo.stream.ReadRune()
-				//				toSuperString <- buffer[i]
+			var letto rune
+			var size, i, j int
+			for i, j = chiSonoSSize, 0; i < chiSonoSSize+daLeggere && j < daLeggere; i++ {
+				letto, size, err = clientAttivo.stream.ReadRune()
+				buffer = append(buffer, letto)
+				j += size
+				//fmt.Printf("#####size:_%v_ carattere:_%v_%v_\n",strconv.Itoa(size),string(buffer[i]),buffer[i])
 				if err != nil {
 					//TODO gestisci errore
-					fmt.Println("Errore nel leggere dalla rete")
+					logs.Error("Errore nel leggere dalla rete")
 					clientAttivo.blocco <- 1 //TODO dovresti chiudere il canale e tutto quanto
 					clientAttivo.gestisciDisconnessione(database.MainConv)
 					break
@@ -260,6 +274,8 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 			for i := 0; i < chiSonoSSize; i++ {
 				buffer[i] = []rune(chiSonoString)[i]
 			}
+			//			buffer = buffer[:i]
+
 			//spedisci
 			for i := 0; i < len(buffer); i++ {
 				input <- buffer[i]
@@ -301,16 +317,30 @@ func StartServer(laddress string) {
 		//TODO handle error
 	}
 
-	database.MainConv = database.NewConversation(&database.ServerFakeUser)
+	//database.MainConv = database.NewConversation(database.ServerFakeUser) //duplicato!
 
 	//canale := make(chan byte, 256)
 	codaReadiness := make(chan *Client, 64)
 	codaAccettazioni := make(chan *Client, 64)
+	logs.AggiungiAzioneDiChiusura(func() {
+		close(codaReadiness)
+		close(codaAccettazioni)
+	})
 
 	go spedisci(codaAccettazioni, codaReadiness)
 
-	for {
+	var spegniti bool = false
+
+	logs.AggiungiAzioneDiChiusura(func() {
+		spegniti = true
+		ln.Close()
+	})
+
+	for !spegniti {
 		conn, err := ln.Accept()
+		if spegniti {
+			return
+		}
 		if err != nil {
 			//TODO fare un pacchetto per la raccolta degli errori
 			logs.Error("Tentativo di connessione non andato a buon fine: ", err.Error())

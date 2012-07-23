@@ -1,66 +1,85 @@
 '''
-Classe comunicatore che riesce a ricevere e inviare dati.
+Modulo che permette di ricevere e inviare dati.
 Ha dentro definite le meccaniche di comunicazione.
-@author: stengun
+
+Tutti i comandi sono nel formato **\\XY\\**
+Qui di seguito sono elencati tutti i comandi supportati dal server:
+
+Ricezione/Invio:
+ * **\\Px\\** - Comando che indica il post attivo per i comandi successivi. *x* è un intero, indica l'id del post.
+ * **\\Cx\\** - Indica un aggiornamento per il cursore della scrittura/lettura. *x* è un intero, indica la posizione del cursore.
+ * **\\Dx\\** - Indica la cancellazione di qualcosa. *x* è un intero che dice quanti caratteri sono stati cancellati.
+
+Ricezione:
+ * **\\Rx\\**   - Response dal server per un dato comando. *x* è un intero che rappresenta il codice risposta.
+ * **\\Ux\\**   - Indica l'utente attivo per i comandi successivi. *x* è un intero, rappresenta l'ID utente.
+ * **\\Kx\y\\** - Indica la creazione di un post. *x* rappresenta l'id del post "padre", *y* l'id del post appena creato.
+
+Invio:
+ * **\\Lx\\** - Indica al server il comando di login. *x* rappresenta il comando. *0* per login, *1* per registrazione.
+ * **\\Kx\\** - Indica al server che voglio creare un post. *x* è il padre del post.
 '''
-import queue
-import socket
-import sys
+import queue,socket,sys,logging
 from PyQt4 import QtCore
 
 class comunicatore(QtCore.QThread):
     '''
     Generico comunicatore che imposta anche i thread per la ricezione.
+    Effettua il parsing dei dati ricevuti e dei responses, loggando anche i messaggi di errore.
     '''
+
     _socket = None
+    
     _posizione = None
     _messaggi = None
     _stop = None
-    blink_cursor = None
-    _utenteAttivo = 0
-    _userID = None
+    
+    _registered = False
+
     _receive_thread = None
-    _response = None
-    _activePost = None
+    _lastResponse = None
+
+    #robe interne
     _barrier = None
-    _cursors = {}
+    #_cursors = {}
+    _postPlexer = None
+    
     def __init__(self):
         QtCore.QThread.__init__(self)
         self._socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self._messaggi = queue.Queue(255)
         self._stop = False
-        _rimozione = QtCore.pyqtSignal(int,int,name='rimozione')
-        _aggiunta = QtCore.pyqtSignal(int,str,name='aggiunta')
+        self._logger = logging.getLogger()
+        _refreshcursor = QtCore.pyqtSignal(int,name='refreshCursor')
+        _applydelete = QtCore.pyqtSignal(int, name='applyDelete')
+        _applyaggiunta = QtCore.pyqtSignal(str, name='applyAggiunta')
         _nuovopost = QtCore.pyqtSignal(int,name='nuovoPost')
-        _selpost = QtCore.pyqtSignal(int,name='selectPost')
-        _nuovutente = QtCore.pyqtSignal(int,int,name='cambiaUtente')
-        self.blink_cursor = 0
+        _selpost = QtCore.pyqtSignal(int,name='refreshPost')
+        _nuovutente = QtCore.pyqtSignal(int,name='selectUser')
+        _myid = QtCore.pyqtSignal(int,name='myId')
         
     def run(self):
-        self._cursors[0] = (0,0)
         while(not(self._stop)):
             try:
                 messaggio = self._messaggi.get(True, None)
             except:
-                print('errore connettore',sys.exc_info())
+                self._logger.error("Errore nel prelievo del messaggio dal thread.",exc_info=True)
                 self._stop = True
                 self._receive_thread.setTerminationEnabled()
                 self._receive_thread._stop = True
                 continue
-            #print('messaggio',messaggio)
-            if(self._parseinput(messaggio) and self._utenteAttivo != self._userID):
-                print('scrivo:',messaggio,
-                      'per utente',self._utenteAttivo,
-                      'con cursore',self._cursors[self._utenteAttivo][0],
-                      'e post',self._cursors[self._utenteAttivo][1])
-                
-                self.emit(QtCore.SIGNAL('aggiunta(int,QString)'),self._cursors[self._utenteAttivo][0],messaggio)
-                self._cursors[self._utenteAttivo] = (self._cursors[self._utenteAttivo][0]+1,self._cursors[self._utenteAttivo][1])
-                
+            if(messaggio == ""):
+                self._receive_thread.setTerminationEnabled()
+                self._receive_thread._stop = True
+                self._stop = True
+                continue
+            if(self._parseinput(messaggio)):
+                self.emit(QtCore.SIGNAL('applyAggiunta(QString)'),messaggio)
+                #self._postPlexer.applyAggiunta(messaggio)        
         try:
             self.disconnetti()
         except:
-            print('problema',sys.exc_info())
+            self._logger.warning("Errore in fase di disconnessione: %s",sys.exc_info())
         finally:
             self._stop = False
            
@@ -70,8 +89,7 @@ class comunicatore(QtCore.QThread):
         Se questo test fallisce, imposta il valore di messaggio a None.
         '''
         if(controllo != '\\'):
-            print('Errore stream TCP!',file=sys.stderr)
-            self.blink_cursor = 0 
+            self._logger.critical("Errore nel formato dei messaggi!")
             messaggio = None
         return messaggio
     
@@ -91,85 +109,51 @@ class comunicatore(QtCore.QThread):
     def _parseinput(self,messaggio):
         '''
         Effettua l'analisi del messaggio ricevuto: Ritorna TRUE se si tratta di un carattere di controllo,
-        altri menti ritorna False quando si tratta di un comando.
+        altrimenti ritorna False quando si tratta di un comando.
+        Per ogni comando effettua l'azione corrispondente prima di uscire.
         '''
         controllo = '\00'
         
         if(messaggio == '\\'): # selezione comando
-            #print('caso 1')
             messaggio = self._messaggi.get(True,None)
-            #print('comando:',messaggio)
             if(messaggio == '\\'): #non è un comando.
                 return True
             
             if(messaggio == 'C'): #Modifica cursore
-                print('caso C')
-                [self.blink_cursor, controllo] = self._recvInt()
-                if(self._userID != self._utenteAttivo):
-                    print('cursore ',self.blink_cursor)
-                    self._cursors[self._utenteAttivo] = (self.blink_cursor,self._activePost)
+                [cursore, controllo] = self._recvInt()
+                self.emit(QtCore.SIGNAL('refreshCursor(int)'),cursore)
                 messaggio = self._controller(controllo, messaggio)
                 return False
             
             if(messaggio == 'D'): # Eliminazione
-                print('caso D')
                 [quantita, controllo] = self._recvInt()
-                self._cursors[self._utenteAttivo] = ((self._cursors[self._utenteAttivo][0] - quantita),self._activePost)
-                #self._cursors[self._utenteAttivo] = (self.blink_cursor,self._activePost)
                 messaggio = self._controller(controllo, messaggio)
                 if(messaggio == None):
                     return False
                 else:
-                    if(self._utenteAttivo != self._userID):
-                        self.emit(QtCore.SIGNAL('rimozione(int,int)'),self._cursors[self._utenteAttivo][0],quantita)   
+                    self.emit(QtCore.SIGNAL('applyDelete(int)'),quantita)
                 return False
             
             if(messaggio== 'U'): # Selezione utente
-                #print('caso U')
-                prece = self._utenteAttivo
-                [self._utenteAttivo,controllo] = self._recvInt()
-                print('utente attivo',self._utenteAttivo)
-                try:
-                    self._cursors[self._utenteAttivo]
-                except:
-                    print('Warning: utente nuovo',file=sys.stderr)
-                    self._cursors[self._utenteAttivo] = (0,0)
-
-                #if(self._utenteAttivo != self._userID):
-                #    self.cursore_locale = self.blink_cursor
-                #if(prece != None):
-                #    self.emit(QtCore.SIGNAL('cambiaUtente(int,int)'),prece,self._activePost)
-                #    self._barrier.wait()
+                [utente,controllo] = self._recvInt()
+                self.emit(QtCore.SIGNAL('selectUser(int)'),utente)
                 messaggio = self._controller(controllo, messaggio)
                 return False
             
             if(messaggio =='R'): #Risposta a una azione
-                #print('Caso Response')
-                [self._response,controllo] = self._recvInt()
-                print('Caso Response: risposta',self._response)
+                [self._lastResponse,controllo] = self._recvInt()
+                self._logger.info("Risposta dal server: %s",str(self._lastResponse))
                 messaggio = self._controller(controllo, messaggio)
-                #print(controllo)
                 return False
             
-            if(messaggio == 'P'):#creazione post
-                print('caso POST')
+            if(messaggio == 'P'):#selezione post
                 [idpost,controllo] = self._recvInt()
-                #print('idPost',idpost)
                 messaggio = self._controller(controllo, messaggio)
-                self._activePost = idpost
-                actu = 0
-#                try:
-#                    temp = self._cursors[self._utenteAttivo]
-#                    if(temp[1] == idpost):
-#                        actu = temp[0]
-#                finally:
-#                    self._cursors[self._utenteAttivo] = (actu,idpost)
-                self.emit(QtCore.SIGNAL('selectPost(int)'),idpost)
-                self._barrier.wait()
+                self.emit(QtCore.SIGNAL('refreshPost(int)'),idpost)
+                #self._postPlexer.refreshPost(idpost)
                 return False
             
             if(messaggio == 'K'):
-                print('caso Kreazione') #non sono un bimbominchia
                 [parent,controllo] = self._recvInt()
                 [idpost,controllo] = self._recvInt()
                 self.emit(QtCore.SIGNAL('nuovoPost(int)'),idpost)
@@ -182,22 +166,36 @@ class comunicatore(QtCore.QThread):
         '''
         Metodo per effettuare una registrazione ad un server.
         '''
-        self._socket.connect((hostname,porta))
+        if(self._registered):
+            self._logger.info("Registrazione già effettuata.")
+            return self._registered
+        
+        try:
+            self._socket.connect((hostname,porta))
+        except:
+            print('Errore registrazione: ',sys.exc_info(),sys.stderr)
+            return self._registered
+        
         self._receive_thread = Receiver(self._messaggi,self._socket)
         self._receive_thread.start()
         self._spedisci('\L1\\')
         self._spedisci(nickname+'\\'+password+'\\')
         messaggio = self._messaggi.get(True, None)
-        if(self._parseinput(messaggio) or self._parseResponse(self._response)):
-            print('Errore di registrazione! errore ',self._response)
-            sys.exit()
-        print('Registrazione completata!')
+        if(self._parseinput(messaggio)):
+            risposta = self._parseResponse(self._lastResponse)
+            if(risposta[0]):
+                print(risposta[1])
+                return self._registered
+        
+        self._logger.info("Registrazione completata correttamente.")
+        self._registered = True
         self.disconnetti()
+        return self._registered
     
     def connetti(self,hostname,porta,nickname,password):
         '''
         Metodo per effettuare una connessione ad un server.
-        '''
+        '''        
         self._socket.connect((hostname,porta))
         self._receive_thread = Receiver(self._messaggi,self._socket)
         self._receive_thread.start()
@@ -206,36 +204,61 @@ class comunicatore(QtCore.QThread):
         messaggio = self._messaggi.get(True, None)
 
         if(self._parseinput(messaggio)):
-            print('Errore di login! Errore',self._response)
-            return
+            risposta = self._parseResponse(self._lastResponse)
+            if(risposta[0]):
+                print(risposta[1])
+                return False
         
         controllo = '\00'
-        if(self._parseResponse(self._response)):
-            errore = 'il server non ha accettato la connessione'
+        risposta = self._parseResponse(self._lastResponse)
+        if(risposta[0]):
+            errore = risposta[1]
             try:
                 self.disconnetti()
             except:
-                errore = 'il server ha chiuso la connessione!'+sys.exc_info()
+                self._logger.error(errore,exc_info=True)
             finally:
-                print(errore,file=sys.stderr)
+                #print(errore)
                 self._stop = True
-                return
+                return False
         try:
-            [self._userID,controllo] = self._recvInt()
+            [_userID,controllo] = self._recvInt()
+            if(self._controller(controllo, messaggio) == None):
+                raise BaseException
         except:
-            print('connessione chiusa!',file=sys.stderr)
+            self._logger.critical("Connessione chiusa dal server!",exc_info=True)
             sys.exit()
-        print('il tuo ID',self._userID)
-        print(controllo)
-        self._cursors[self._userID] = (0,0)
+        
+        self.emit(QtCore.SIGNAL('myId(int)'),_userID)
+        self._logger.info("Connessione effettuata correttamente.\
+                            ID utente %s",str(_userID))
+        return True
         
     def _parseResponse(self,response):
         '''
         Metodo che analizza i codici di risposta, e ritorna True se è un codice di errore.
+        Codici di risposta:
+            0 - Tutto ok
+            1 - (login) Errore: utente non registrato
+            2 - (login) Errore: utente già connesso
+            3 - (login) Errore: password sbagliata
+        
         '''
         if(response == 0):
-            return False
-        return True
+            self._logger.info("Response OK")
+            return False,"OK"
+        if(response == 1):
+            self._logger.error("Impossibile effettuare il login, utente non registrato.")
+            return True,"Utente non registrato."
+        if(response == 2):
+            self._logger.info("Utente già connesso al server.")
+            self._registered = True
+            return False,"Utente già connesso altrove"
+        if(response == 3):
+            self._logger.error("Impossibile effettuare il login, password errata.")
+            return True,"Password Errata."
+        self._logger.error("C'è stato un errore non catalogato. ID %s",str(response))
+        return True,"Errore generico."
     
     def disconnetti(self):
         '''
@@ -247,6 +270,7 @@ class comunicatore(QtCore.QThread):
         self._socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self._receive_thread.setTerminationEnabled(True)
         self._receive_thread._stop = True
+        self._postPlexer._userID = None
         self._messaggi = queue.Queue(255)
         
     def _spedisci(self,data):
@@ -261,45 +285,43 @@ class comunicatore(QtCore.QThread):
     def spedisci_aggiunta(self,posizione,dati,idpost):
         '''
         Spedisce al server una aggiunta di testo su uno specifico post e da una specifica posizione.
-        '''
-        #dati = dati.encode()
-        #self._spedisci('\00')
-#        print('posizione attuale',self._cursors[self._userID][0])
-#        print('posizione da cui partire',posizione)
-#        print('posizione da aggiungere',len(dati))
-#        
-        if(self._cursors[self._userID][1] != idpost):
+        '''      
+        if(self._postPlexer.myActivePost() != idpost):
             self._spedisci('\P'+str(idpost)+'\\')
-            #self._cursors[self._utenteAttivo] = (self._cursors[self._utenteAttivo][0],idpost)
+            self._postPlexer.refreshmyPost(idpost)
 
-        if(self._cursors[self._userID][0] != posizione):
+        if(self._postPlexer.myActiveCursor() != posizione):
             self._spedisci('\C'+str(posizione)+'\\')
-            #self._cursors[self._utenteAttivo] = (self._cursors[self._utenteAttivo][0]+len(dati),idpost)
+
         self._spedisci(dati)
-        self._cursors[self._userID] = (posizione+len(dati),idpost)
-        print('posizione finale',self._cursors[self._userID][0])
+        self._postPlexer.refreshmyCursor(posizione+len(dati))
+        self._logger.debug("POST %s: Spedita aggiunta da %s di %s caratteri.",str(idpost),str(posizione),str(len(dati)))
         
     def spedisci_rimozione(self,posizione,rimossi,idpost):
         '''
         Spedisce al server una segnalazione di rimozione testo, con puntatore e numero di
         caratteri che sono stati rimossi.
         '''
-        if(self._cursors[self._userID][1] != idpost):
+        if(self._postPlexer.myActivePost() != idpost):
             self._spedisci('\P'+str(idpost)+'\\')
-            self._cursors[self._userID] = (self._cursors[self._userID][0],idpost)
+            self._postPlexer.refreshmyPost(idpost)
         posizione += rimossi
-        if(posizione != self._cursors[self._userID][0]):
+        if(posizione != self._postPlexer.myActiveCursor()):
             self._spedisci('\C'+str(posizione)+'\\')
+        
         self._spedisci('\D'+str(rimossi)+'\\')
-        self._cursors[self._userID] = (posizione-1,idpost)
+        self._postPlexer.refreshmyCursor(posizione)
+        self._logger.debug("POST %s: Spedita rimozione di %s caratteri da %s",str(idpost),str(rimossi),str(posizione))
         
 class Receiver(QtCore.QThread):
     '''
     Classe che rappresenta il thread per ricevere i dati
+    L'unica cosa che fa è ricevere dei dati da un socket e inserirli dentro una coda.
     '''
     _coda = queue.Queue()
     _stop = None
     _socket = None
+    _logger = logging.getLogger("file_log")
     def __init__(self,coda,socket):
         QtCore.QThread.__init__(self)
         self._coda = coda
@@ -308,7 +330,6 @@ class Receiver(QtCore.QThread):
     
     def run(self):
         while(not(self._stop)):
-            #print('ricevimento')
             try:
                 buffer = self._socket.recv(1)
                 try:
@@ -316,10 +337,10 @@ class Receiver(QtCore.QThread):
                 except:
                     buffer += self._socket.recv(1)
                     buffer = buffer.decode("utf-8")
-                #print(buffer)
                 self._coda.put(buffer)
             except:
-                print('eccezione',sys.exc_info())
+                self._logger.exception("Thread ricezione: chiusura thread in corso.")
                 self._stop = True
+                self._coda = None
         self._stop = False
     

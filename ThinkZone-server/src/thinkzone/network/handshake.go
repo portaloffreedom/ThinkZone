@@ -49,23 +49,34 @@ func GestisciClient(conn net.Conn) (*Client, func(chan *Client)) {
 
 	return client, func(readiness chan *Client) {
 
-		for {
-			_, _, err := client.stream.ReadRune()
+		var spegniti bool = false
+
+		logs.AggiungiAzioneDiChiusura(func() {
+			spegniti = true
+		})
+
+		for !spegniti {
+			_, size, err := client.stream.ReadRune()
 			if err != nil {
 				logs.Error("connessione interrotta: ", conn.RemoteAddr().String(), "\n\tmotivazione: ", err.Error())
 				client.gestisciDisconnessione(database.MainConv)
 				return
 			}
+			//			for i := 0; i < size; i++ {
+			fmt.Printf("letto carattere di %v byte\n", size)
 			err = client.stream.UnreadRune()
 			if err != nil {
 				logs.Error("impossibile fare UnreadByte: ", conn.RemoteAddr().String(), "\n\tmotivazione: ", err.Error())
 				client.gestisciDisconnessione(database.MainConv)
 				return
 			}
+			//			}
 
 			readiness <- client
 			<-client.blocco
 		}
+
+		(*client.conn).Close()
 	}
 }
 
@@ -112,8 +123,14 @@ func (client *Client) handshake() bool {
 	client.stream.WriteString(strconv.Itoa(client.user.ID))
 	client.stream.WriteRune('\\')
 
-	//TODO spedisci lo stato attuale della conversazione
+	//spedisci lo stato attuale della conversazione
+	client.stream.WriteString("\\U0\\")
 	client.stream.WriteString(database.MainConv.GetComplete(false))
+
+	//Invia le posizioni di tutte quante le persone connesse
+	client.stream.WriteString(database.MainConv.GetAllPositionString())
+	//invia l'utente attivo
+	client.stream.WriteString("\\U" + strconv.Itoa(database.MainConv.UtenteAttivo) + "\\")
 
 	client.stream.Flush()
 	return true

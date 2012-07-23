@@ -5,17 +5,26 @@ import (
 	"fmt"
 	"thinkzone/logs"
 	"thinkzone/network"
-
-	//	"database/sql"	
-	//	_ "github.com/jbarham/gopgsqldriver"
-	//	"math"
 )
+
+var Version string = "0.2a"
 
 func main() {
 	fmt.Println("Benvenuto su ThinkZone!")
 	logs.StampaSuTerminale(true)
 
-	network.StartServer(":4242")
-	//	StartServer(":80")
+	/*logs.AggiungiAzioneDiChiusura(func() {
+		logs.Log("inizio a salvare gli utenti")
+		err := database.SalvaUtenti()
+		if err != nil {
+			logs.Error(err.Error())
+			return
+		}
+		logs.Log("finito di salvare gli utenti")
+	})*/
 
+	//network.StartServer(":4242")
+	network.StartServer(":22")
+
+	<-logs.ChiusuraCompletata
 }

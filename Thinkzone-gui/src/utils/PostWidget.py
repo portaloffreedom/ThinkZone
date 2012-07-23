@@ -2,6 +2,7 @@
 Created on 15/lug/2012
 Widget che rappresenta un post per il programma.
 I post hanno un ID che li rende unici.
+Incorpora una textarea modificata per consentire a più utenti di accedervi contemporaneamente.
 @author: stengun
 '''
 from utils import PostArea
@@ -9,7 +10,7 @@ from PyQt4 import QtGui, QtCore
 
 class postWidget(QtGui.QWidget):
     '''
-    Widget che crea l'oggetto "post", capace di essere un post normale o una risposta a un post.
+    Widget che crea l'oggetto "post", visualizzabile nella finestra principale.
     '''
     _label = None
     _textArea = None
@@ -21,12 +22,15 @@ class postWidget(QtGui.QWidget):
         QtGui.QWidget.__init__(self)
         self.setupUi(self)
         self._idpost = idpost
-        if(parent != None):
-            spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-            self.horizontalLayout.addItem(spacerItem)
-        self._label.setText('id:'+str(self._idpost))
-        self.horizontalLayout.addWidget(self._textArea)
+        if(self._idpost == 0):
+            self._textArea.setMaximumHeight(40)
+            self.setMaximumHeight(40)
+            self._label.setMaximumHeight(40)
+            self._label.setText("Titolo:")
+        else:
+            self._label.setText('id:'+str(self._idpost))
         self.horizontalLayout.addWidget(self._label)
+        self.horizontalLayout.addWidget(self._textArea)
         
     def emettiRimosso(self,posizione,rimossi):
         '''
@@ -59,9 +63,9 @@ class postWidget(QtGui.QWidget):
         Imposta la finestra con gli oggetti.
         '''
         Form.setObjectName("Form")
-        Form.resize(363, 105)
+        Form.resize(50, 40)
         self.setMaximumSize(2096,150)
-        self.setMinimumSize(0, 100)
+        self.setMinimumSize(0, 50)
         self._label = QtGui.QLabel()
         self._textArea = PostArea.Post()
         self.horizontalLayout = QtGui.QHBoxLayout(Form)
