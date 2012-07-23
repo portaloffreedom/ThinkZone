@@ -149,6 +149,10 @@ class PostPlexer(QtCore.QObject):
                             Spostamento cursore all'indice %s",
                             str(self._utenteAttivo),str(self._getCursor()))
     
+    def refreshmyCursor(self,cursor):
+        userdata = (cursor,self.myActivePost)
+        self._cursors[self._userID] = userdata
+        
     def refreshPost(self,postid):
         '''
         aggiorna il post dell'utente attivo.
@@ -157,6 +161,10 @@ class PostPlexer(QtCore.QObject):
         self._cursors[self._utenteAttivo] = userdata
         self._postConnect()
     
+    def refreshmyPost(self,postid):
+        userdata = (self.myActiveCursor,postid)
+        self._cursors[self._userID] = userdata
+        
     def applyDelete(self,quantita):
         '''
         Cancella i caratteri dal post selezionato.

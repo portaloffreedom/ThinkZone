@@ -288,13 +288,13 @@ class comunicatore(QtCore.QThread):
         '''      
         if(self._postPlexer.myActivePost() != idpost):
             self._spedisci('\P'+str(idpost)+'\\')
-            self._postPlexer.refreshPost(idpost)
+            self._postPlexer.refreshmyPost(idpost)
 
         if(self._postPlexer.myActiveCursor() != posizione):
             self._spedisci('\C'+str(posizione)+'\\')
 
         self._spedisci(dati)
-        self._postPlexer.refreshCursor(posizione+len(dati))
+        self._postPlexer.refreshmyCursor(posizione+len(dati))
         self._logger.debug("POST %s: Spedita aggiunta da %s di %s caratteri.",str(idpost),str(posizione),str(len(dati)))
         
     def spedisci_rimozione(self,posizione,rimossi,idpost):
@@ -304,13 +304,13 @@ class comunicatore(QtCore.QThread):
         '''
         if(self._postPlexer.myActivePost() != idpost):
             self._spedisci('\P'+str(idpost)+'\\')
-            self._postPlexer.refreshPost(idpost)
+            self._postPlexer.refreshmyPost(idpost)
         posizione += rimossi
         if(posizione != self._postPlexer.myActiveCursor()):
             self._spedisci('\C'+str(posizione)+'\\')
         
         self._spedisci('\D'+str(rimossi)+'\\')
-        self._postPlexer.refreshCursor(posizione)
+        self._postPlexer.refreshmyCursor(posizione)
         self._logger.debug("POST %s: Spedita rimozione di %s caratteri da %s",str(idpost),str(rimossi),str(posizione))
         
 class Receiver(QtCore.QThread):
