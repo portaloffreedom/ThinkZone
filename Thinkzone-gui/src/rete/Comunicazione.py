@@ -33,60 +33,49 @@ class comunicatore(QtCore.QThread):
     _posizione = None
     _messaggi = None
     _stop = None
-    blink_cursor = None
+    
     _registered = False
-    _utentePrecedente = None
-    _utenteAttivo = None
-    _userID = None
+
     _receive_thread = None
     _lastResponse = None
-    _activePost = None
-    _lastPost = None
+
     #robe interne
     _barrier = None
-    _cursors = {}
+    #_cursors = {}
+    _postPlexer = None
+    
     def __init__(self):
         QtCore.QThread.__init__(self)
         self._socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self._messaggi = queue.Queue(255)
         self._stop = False
         self._logger = logging.getLogger()
-        _rimozione = QtCore.pyqtSignal(int,int,name='rimozione')
-        _aggiunta = QtCore.pyqtSignal(int,str,name='aggiunta')
+        _refreshcursor = QtCore.pyqtSignal(int,name='refreshCursor')
+        _applydelete = QtCore.pyqtSignal(int, name='applyDelete')
+        _applyaggiunta = QtCore.pyqtSignal(str, name='applyAggiunta')
         _nuovopost = QtCore.pyqtSignal(int,name='nuovoPost')
-        _selpost = QtCore.pyqtSignal(int,name='selectPost')
-        _nuovutente = QtCore.pyqtSignal(int,name='cambiaUtente')
-        self.blink_cursor = 0
+        _selpost = QtCore.pyqtSignal(int,name='refreshPost')
+        _nuovutente = QtCore.pyqtSignal(int,name='selectUser')
+        _myid = QtCore.pyqtSignal(int,name='myId')
         
     def run(self):
-        self._cursors[0] = (0,0)
         while(not(self._stop)):
             try:
                 messaggio = self._messaggi.get(True, None)
             except:
                 self._logger.error("Errore nel prelievo del messaggio dal thread.",exc_info=True)
-                #print('errore connettore',sys.exc_info())
                 self._stop = True
                 self._receive_thread.setTerminationEnabled()
                 self._receive_thread._stop = True
                 continue
             if(messaggio == ""):
-                #self.disconnetti()
                 self._receive_thread.setTerminationEnabled()
                 self._receive_thread._stop = True
                 self._stop = True
                 continue
-            #print('messaggio',messaggio)
-            if(self._parseinput(messaggio) and self._utenteAttivo != self._userID):
-                self._logger.debug('Utente %s, post %s. Scrivo %s in posizione %s',
-                      self._utenteAttivo,
-                      self._cursors[self._utenteAttivo][1],
-                      messaggio,
-                      self._cursors[self._utenteAttivo][0])
-                
-                self.emit(QtCore.SIGNAL('aggiunta(int,QString)'),self._cursors[self._utenteAttivo][0],messaggio)
-                self._cursors[self._utenteAttivo] = (self._cursors[self._utenteAttivo][0]+1,self._cursors[self._utenteAttivo][1])
-                
+            if(self._parseinput(messaggio)):
+                self.emit(QtCore.SIGNAL('applyAggiunta(QString)'),messaggio)
+                #self._postPlexer.applyAggiunta(messaggio)        
         try:
             self.disconnetti()
         except:
@@ -101,7 +90,6 @@ class comunicatore(QtCore.QThread):
         '''
         if(controllo != '\\'):
             self._logger.critical("Errore nel formato dei messaggi!")
-            self.blink_cursor = 0 
             messaggio = None
         return messaggio
     
@@ -132,43 +120,23 @@ class comunicatore(QtCore.QThread):
                 return True
             
             if(messaggio == 'C'): #Modifica cursore
-                [self.blink_cursor, controllo] = self._recvInt()
-                if(self._userID != self._utenteAttivo):
-                    print('cursore ',self.blink_cursor)
-                    self._cursors[self._utenteAttivo] = (self.blink_cursor,self._activePost)
-                    self._logger.debug("Utente %s.\n \
-                                        Spostamento cursore all'indice %s",
-                                        str(self._utenteAttivo),str(self.blink_cursor))
+                [cursore, controllo] = self._recvInt()
+                self.emit(QtCore.SIGNAL('refreshCursor(int)'),cursore)
                 messaggio = self._controller(controllo, messaggio)
                 return False
             
             if(messaggio == 'D'): # Eliminazione
                 [quantita, controllo] = self._recvInt()
-                self._cursors[self._utenteAttivo] = ((self._cursors[self._utenteAttivo][0] - quantita),self._activePost)
                 messaggio = self._controller(controllo, messaggio)
                 if(messaggio == None):
                     return False
                 else:
-                    if(self._utenteAttivo != self._userID):
-                        self.emit(QtCore.SIGNAL('rimozione(int,int)'),self._cursors[self._utenteAttivo][0],quantita)
-                        self._logger.debug("Utente %s.\n \
-                                            Rimossi %s caratteri.",
-                                            str(self._utenteAttivo),str(quantita))
+                    self.emit(QtCore.SIGNAL('applyDelete(int)'),quantita)
                 return False
             
             if(messaggio== 'U'): # Selezione utente
-                self._utentePrecedente = self._utenteAttivo
-                [self._utenteAttivo,controllo] = self._recvInt()
-                try:
-                    self._cursors[self._utenteAttivo]
-                except:
-                    self._logger.info("Registrato utente %s.",str(self._utenteAttivo))
-                    self._cursors[self._utenteAttivo] = (0,0)
-                self._logger.debug("L'utente %s è ora attivo.",str(self._utenteAttivo))
-
-                if(self._utentePrecedente != None):
-                    self.emit(QtCore.SIGNAL('cambiaUtente(int)'),self._lastPost)
-                    self._barrier.wait()
+                [utente,controllo] = self._recvInt()
+                self.emit(QtCore.SIGNAL('selectUser(int)'),utente)
                 messaggio = self._controller(controllo, messaggio)
                 return False
             
@@ -180,12 +148,9 @@ class comunicatore(QtCore.QThread):
             
             if(messaggio == 'P'):#selezione post
                 [idpost,controllo] = self._recvInt()
-                self._logger.debug("Utente %s, seleziona il post %s",str(self._utenteAttivo),str(idpost))
                 messaggio = self._controller(controllo, messaggio)
-                self._lastPost = self._activePost
-                self._activePost = idpost
-                self.emit(QtCore.SIGNAL('selectPost(int)'),idpost)
-                self._barrier.wait()
+                self.emit(QtCore.SIGNAL('refreshPost(int)'),idpost)
+                #self._postPlexer.refreshPost(idpost)
                 return False
             
             if(messaggio == 'K'):
@@ -257,16 +222,16 @@ class comunicatore(QtCore.QThread):
                 self._stop = True
                 return False
         try:
-            [self._userID,controllo] = self._recvInt()
+            [_userID,controllo] = self._recvInt()
             if(self._controller(controllo, messaggio) == None):
                 raise BaseException
         except:
             self._logger.critical("Connessione chiusa dal server!",exc_info=True)
             sys.exit()
-
-        self._cursors[self._userID] = (0,0)
+        
+        self.emit(QtCore.SIGNAL('myId(int)'),_userID)
         self._logger.info("Connessione effettuata correttamente.\
-                            ID utente %s",str(self._userID))
+                            ID utente %s",str(_userID))
         return True
         
     def _parseResponse(self,response):
@@ -305,6 +270,7 @@ class comunicatore(QtCore.QThread):
         self._socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self._receive_thread.setTerminationEnabled(True)
         self._receive_thread._stop = True
+        self._postPlexer._userID = None
         self._messaggi = queue.Queue(255)
         
     def _spedisci(self,data):
@@ -320,14 +286,15 @@ class comunicatore(QtCore.QThread):
         '''
         Spedisce al server una aggiunta di testo su uno specifico post e da una specifica posizione.
         '''      
-        if(self._cursors[self._userID][1] != idpost):
+        if(self._postPlexer.myActivePost() != idpost):
             self._spedisci('\P'+str(idpost)+'\\')
+            self._postPlexer.refreshPost(idpost)
 
-        if(self._cursors[self._userID][0] != posizione):
+        if(self._postPlexer.myActiveCursor() != posizione):
             self._spedisci('\C'+str(posizione)+'\\')
 
         self._spedisci(dati)
-        self._cursors[self._userID] = (posizione+len(dati),idpost)
+        self._postPlexer.refreshCursor(posizione+len(dati))
         self._logger.debug("POST %s: Spedita aggiunta da %s di %s caratteri.",str(idpost),str(posizione),str(len(dati)))
         
     def spedisci_rimozione(self,posizione,rimossi,idpost):
@@ -335,15 +302,15 @@ class comunicatore(QtCore.QThread):
         Spedisce al server una segnalazione di rimozione testo, con puntatore e numero di
         caratteri che sono stati rimossi.
         '''
-        if(self._cursors[self._userID][1] != idpost):
+        if(self._postPlexer.myActivePost() != idpost):
             self._spedisci('\P'+str(idpost)+'\\')
-            self._cursors[self._userID] = (self._cursors[self._userID][0],idpost)
+            self._postPlexer.refreshPost(idpost)
         posizione += rimossi
-        if(posizione != self._cursors[self._userID][0]):
+        if(posizione != self._postPlexer.myActiveCursor()):
             self._spedisci('\C'+str(posizione)+'\\')
         
         self._spedisci('\D'+str(rimossi)+'\\')
-        self._cursors[self._userID] = (posizione-1,idpost)
+        self._postPlexer.refreshCursor(posizione)
         self._logger.debug("POST %s: Spedita rimozione di %s caratteri da %s",str(idpost),str(rimossi),str(posizione))
         
 class Receiver(QtCore.QThread):
@@ -372,7 +339,7 @@ class Receiver(QtCore.QThread):
                     buffer = buffer.decode("utf-8")
                 self._coda.put(buffer)
             except:
-                self._logger.exception("Thread"+str(self.__name__)+": chiusura thread in corso.")
+                self._logger.exception("Thread ricezione: chiusura thread in corso.")
                 self._stop = True
                 self._coda = None
         self._stop = False

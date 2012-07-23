@@ -1,7 +1,6 @@
 '''
 Dialog window per il login. Viene richiamato dalla finestra principale.
 Costruisce la finestra di login dalla classe di PyQt4
-@author: stengun
 '''
 import sys
 from gui import login,aboutDialog
@@ -9,7 +8,7 @@ from PyQt4 import QtGui, QtCore
 
 class Login(QtGui.QDialog, login.Ui_Dialog):
     '''
-    Dialog box per il login. Imposta tutti i connettori personalizzati e controlli sui widget.
+    Classe che costruisce la finestra di login. Imposta tutti i connettori personalizzati e controlli sui widget.
     '''
     _connettore = None
     _parent = None

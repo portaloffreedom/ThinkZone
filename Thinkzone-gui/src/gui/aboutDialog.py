@@ -1,9 +1,6 @@
 '''
-Created on 12/lug/2012
 Finestra di Dialog per la schermata di ABOUT.
 Aggiunge poco e nulla al costruttore generato da QT Designer.
-
-@author: stengun
 '''
 from gui import about
 from PyQt4 import QtGui, QtCore
