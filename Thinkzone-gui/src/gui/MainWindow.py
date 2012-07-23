@@ -150,7 +150,7 @@ class PostPlexer(QtCore.QObject):
                             str(self._utenteAttivo),str(self._getCursor()))
     
     def refreshmyCursor(self,cursor):
-        userdata = (cursor,self.myActivePost)
+        userdata = (cursor,self.myActivePost())
         self._cursors[self._userID] = userdata
         
     def refreshPost(self,postid):
@@ -162,7 +162,7 @@ class PostPlexer(QtCore.QObject):
         self._postConnect()
     
     def refreshmyPost(self,postid):
-        userdata = (self.myActiveCursor,postid)
+        userdata = (self.myActiveCursor(),postid)
         self._cursors[self._userID] = userdata
         
     def applyDelete(self,quantita):
