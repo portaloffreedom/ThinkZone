@@ -35,6 +35,8 @@ type ConversationError struct {
 	conv           *Conversation
 }
 
+// Ritorna le posizioni di tutte le tuple di cursori sotto forma di stringa già pronta 
+// essere spedita sulla rete
 func (conv *Conversation) GetAllPositionString() string {
 	var messaggio string
 	posizioni := make([]string, 0, len(conv.connected))
