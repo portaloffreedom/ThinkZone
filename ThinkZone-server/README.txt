@@ -1,4 +1,4 @@
-Come installare questo programma:
+Per avviare il server seguire le seguenti istruzioni:
 
 **********************
 **** Compilazione ****
@@ -20,6 +20,8 @@ Come installare questo programma:
 
 sh build.sh
 
+
+
 ***********************
 **** Installazione ****
 ***********************
@@ -32,6 +34,8 @@ cartella dove è stato scaricato
     seguire il link per le istruzioni di come installare:
     http://www.postgresql.org/download/
 
+    
+    
 ***********************
 ******** Avvio ********
 ***********************
@@ -49,5 +53,11 @@ Requisisti per il primo avvio del server
   
   
   
+***********************
+***** Spegnimento *****
+***********************
+  Per spegnere il server basta mandare il segnale sigkill o sigint al processo.
+    Il server gestirà il segnale come chiusura del server: farà tutto quello che
+    deve fare per chiudersi poi si spegnerà da solo
   
   
