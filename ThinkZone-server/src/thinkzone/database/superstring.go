@@ -232,7 +232,11 @@ func removeFromRunes(origin []rune, s_size int, pos int, howmany int) []rune {
 		//		origin = append(origin, origin[pos+howmany+1:s_size+1]...)
 	}
 
-	origin = origin[:s_size-howmany]
+	if s_size < howmany {
+		origin = make([]rune, 0, cap(origin))
+	} else {
+		origin = origin[:s_size-howmany]
+	}
 	return origin
 }
 

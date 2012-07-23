@@ -251,11 +251,13 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 
 			//leggi cosa spedire
 			var daLeggere int = clientAttivo.stream.Reader.Buffered()
-			buffer := make([]rune, chiSonoSSize+daLeggere)
+			buffer := make([]rune, chiSonoSSize, daLeggere+chiSonoSSize)
 			var err error
-			var size int
-			for i, j := chiSonoSSize, 0; i < chiSonoSSize+daLeggere && j < daLeggere; i++ {
-				buffer[i], size, err = clientAttivo.stream.ReadRune()
+			var letto rune
+			var size, i, j int
+			for i, j = chiSonoSSize, 0; i < chiSonoSSize+daLeggere && j < daLeggere; i++ {
+				letto, size, err = clientAttivo.stream.ReadRune()
+				buffer = append(buffer, letto)
 				j += size
 				//fmt.Printf("#####size:_%v_ carattere:_%v_%v_\n",strconv.Itoa(size),string(buffer[i]),buffer[i])
 				if err != nil {
@@ -272,6 +274,8 @@ func flasher(codaCiclica *list.List, readiness chan *Client) {
 			for i := 0; i < chiSonoSSize; i++ {
 				buffer[i] = []rune(chiSonoString)[i]
 			}
+			//			buffer = buffer[:i]
+
 			//spedisci
 			for i := 0; i < len(buffer); i++ {
 				input <- buffer[i]

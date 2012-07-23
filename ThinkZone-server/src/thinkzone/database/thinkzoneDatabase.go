@@ -149,7 +149,7 @@ func init() {
 		var spegniti bool = false
 		logs.AggiungiAzioneDiChiusura(func() { spegniti = true })
 
-		tk := time.NewTicker(1 * time.Minute)
+		tk := time.NewTicker(10 * time.Minute)
 		for !spegniti {
 			<-tk.C
 			err := MainConv.salvaTutteLeConversazioniSQL()
