@@ -17,9 +17,7 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
     #dialogs e finestre
     _loginDialog = None
     _aboutDialog = None
-    #widget personalizzati
-    #_risposte = []
-    #_postids = {}
+    
     _postPlexer = None
     #thread e altro
     _logger = None
@@ -61,8 +59,6 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
         QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('nuovoPost(int)'),self._creapost,2)
         self._creapost(0)
         self.layout_titolo.addWidget(self._postPlexer._postids[0])
-
-
     
     def _inviaCreazione(self):
         '''
@@ -72,19 +68,8 @@ class mainwindow(QtGui.QMainWindow,finestraprincipale.Ui_MainWindow):
         if(atti == None):
             atti = 0
         self._logger.debug("Creazione nuovo post.")
-        #self._connettore._spedisci('\K0\\') #warning
         self._connettore._spedisci('\K'+str(atti)+'\\') # WARNING da ricontrollare meglio.
 
-    
-    def _selpost(self,idpost):
-        if(self._connettore._userID != self._connettore._utenteAttivo):
-            precedente = self._connettore._lastPost
-            if(precedente != idpost):
-                if(precedente != None):
-                    self._deselectPost(precedente)
-                self._selectPost(idpost)
-                self._connettore._cursors[self._connettore._utenteAttivo] = (self._connettore._cursors[self._connettore._utenteAttivo][0],idpost)
-        self._barrier.wait()
         
     def _creapost(self,idpost):
         '''
@@ -123,6 +108,7 @@ class PostPlexer(QtCore.QObject):
         QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('applyDelete(int)'),self.applyDelete,2)
         QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('applyAggiunta(QString)'),self.applyAggiunta,2)
         QtCore.QObject.connect(self._connettore,QtCore.SIGNAL('myId(int)'),self._myId,2)
+        
     def _myId(self,myid):
         self._userID = myid
         self.addUser(myid)
@@ -150,6 +136,9 @@ class PostPlexer(QtCore.QObject):
                             str(self._utenteAttivo),str(self._getCursor()))
     
     def refreshmyCursor(self,cursor):
+        '''
+        Aggiorna il cursore per l'utente locale.
+        '''
         userdata = (cursor,self.myActivePost())
         self._cursors[self._userID] = userdata
         
@@ -162,6 +151,9 @@ class PostPlexer(QtCore.QObject):
         self._postConnect()
     
     def refreshmyPost(self,postid):
+        '''
+        Modifica l'id del post attivo per l'utente locale.
+        '''
         userdata = (self.myActiveCursor(),postid)
         self._cursors[self._userID] = userdata
         
@@ -218,11 +210,20 @@ class PostPlexer(QtCore.QObject):
         self._cursors[utente] = (0,0)
     
     def postAttuale(self):
+        '''
+        Restituisce l'indice del post dell'utente attivo.
+        '''
         return self._cursors[self._utenteAttivo][1]
     
     def myActivePost(self):
+        '''
+        Restituisce l'indice del post attivo per l'utente locale.
+        '''
         return self._cursors[self._userID][1]
     
     def myActiveCursor(self):
+        '''
+        Restituisce il cursore dell'utente locale.
+        '''
         return self._cursors[self._userID][0]
         
