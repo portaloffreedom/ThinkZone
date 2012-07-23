@@ -1,9 +1,7 @@
 '''
-Created on 11/lug/2012
 Mini widget per gestire la modifica concorrenziale di una textarea.
-Eredita da textarea e sviluppa in modo semplice i metodi per consentire la
+Eredita da *QTextEdit* e sviluppa in modo semplice i metodi per consentire la
 scrittura a più utenti senza modificare puntatori all'utente locale.
-@author: stengun
 '''
 
 from PyQt4 import QtGui, QtCore
@@ -29,6 +27,11 @@ class Post(QtGui.QTextEdit):
             QtCore.QObject.disconnect(self.document(), QtCore.SIGNAL("contentsChange(int,int,int)"),self.testoCambiatoSlot)
      
     def testoCambiatoSlot(self,posizione,rimossi,aggiunti):
+        '''
+        Metodo slot, viene chiamato quando il testo nella text area cambia.
+        Calcola le varie posizioni e capisce cosa è stato aggiunto o rimosso. Emette i segnali in base a 
+        cosa è successo.
+        '''
         if(rimossi!=0):
             #print('rimozione')
             self.emit(QtCore.SIGNAL('testoRimosso(int,int)'),posizione,rimossi)
@@ -44,6 +47,11 @@ class Post(QtGui.QTextEdit):
         
         
     def textUpdate(self,posizione,quanti):
+        '''
+        Metodo chiamato quando la textArea è da aggiornare.
+        Fa in modo che il cursore dell'utente locale lampeggi sempre nello stesso punto, 
+        senza spostarsi.
+        '''
         self.blink_cursor = self.textCursor().position()
         if(posizione < self.blink_cursor):
             if (quanti < 0):
@@ -58,6 +66,9 @@ class Post(QtGui.QTextEdit):
         self.setTextCursor(cursore)
     
     def aggiungiTesto(self,posizione,stringa):
+        '''
+        Aggiunge una stringa di testo nella textArea.
+        '''
         self.testo = self.toPlainText()
         #print('aggiungo',stringa,'in posizione',posizione)
         cursore = self.textCursor()
@@ -70,6 +81,9 @@ class Post(QtGui.QTextEdit):
         self._tcpSync(True)
         
     def rimuoviTesto(self,posizione,rimossi):
+        '''
+        Rimuove un numero arbitrario di caratteri dalla textarea.
+        '''
         #print('tolgo ',rimossi,' caratteri dalla posizione ',posizione)
         self.testo = self.toPlainText()
         cursore = self.textCursor()

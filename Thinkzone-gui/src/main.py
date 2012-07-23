@@ -18,7 +18,6 @@ Opzioni registrazione:
                         La porta del server a cui connettersi.
 
 
-@author: stengun
 '''
 import argparse,sys
 from rete import Comunicazione

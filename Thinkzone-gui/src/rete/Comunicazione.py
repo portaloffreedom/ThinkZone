@@ -85,7 +85,7 @@ class comunicatore(QtCore.QThread):
            
     def _controller(self,controllo,messaggio):
         '''
-        Questo metodo decide se il carattere "controllo" è un carattere di fine comando.
+        Questo metodo decide se il carattere *controllo* è un carattere di fine comando.
         Se questo test fallisce, imposta il valore di messaggio a None.
         '''
         if(controllo != '\\'):
@@ -165,6 +165,7 @@ class comunicatore(QtCore.QThread):
     def registrati(self,hostname,porta,nickname,password):
         '''
         Metodo per effettuare una registrazione ad un server.
+        Le situazioni di errore o di normalità vengono scritte nel file di log.
         '''
         if(self._registered):
             self._logger.info("Registrazione già effettuata.")
@@ -196,7 +197,12 @@ class comunicatore(QtCore.QThread):
         '''
         Metodo per effettuare una connessione ad un server.
         '''        
-        self._socket.connect((hostname,porta))
+        try:
+            self._socket.connect((hostname,porta))
+        except:
+            self._stop = True
+            self.disconnetti()
+            return False
         self._receive_thread = Receiver(self._messaggi,self._socket)
         self._receive_thread.start()
         self._spedisci('\L0\\')
