@@ -4,29 +4,33 @@ UNITTEST per testare i metodi di registrazione, connessione e disconnessione del
 '''
 import unittest
 from rete import Comunicazione
+from gui import MainWindow
 
 class TestLogin(unittest.TestCase):
     
     login = None
     hostname = "192.168.0.42"
-    porta = 4242
-    nome = "testingo"
+    porta = 22
+    nome = "testingoo"
     password = "testing"
     
     def setUp(self):
         self.login = Comunicazione.comunicatore()
+        self.login._postPlexer = MainWindow.PostPlexer(self.login)
     
-    def testRegister(self):
-        self.assertFalse(self.login.registrati(self.hostname, 'abc', self.nome, self.password),"Testo la registrazione")
-        self.assertTrue(self.login.registrati(self.hostname, self.porta, self.nome, self.password),"Testo la registrazione")
+#    def testRegister(self):
+#        self.assertFalse(self.login.registrati(self.hostname, 'abc', self.nome, self.password),"Testo la registrazione")
+#        self.assertTrue(self.login.registrati(self.hostname, self.porta, self.nome, self.password),"Testo la registrazione")
+        
     def testLogin(self):     
         self.assertTrue(self.login.connetti(self.hostname, self.porta, self.nome, self.password),"Testando connessione")
-        self.assertGreater(self.login._userID, 0, "testando l'user ID")
+        if(self.login._postPlexer._userID != None):
+            self.assertGreater(self.login._postPlexer._userID, 0, "testando l'user ID")
     
     def testDisconnessione(self):
         self.login.disconnetti()
-        self.assertTrue(self.login._stop,"Verifico se il comunicatore si è settato su STOP")
-        self.assertFalse(self.login._receive_thread.isRunning(),"Testando l'uccisione del thread")
+        if(self.login._receive_thread != None):
+            self.assertFalse(self.login._receive_thread.isRunning(),"Testando l'uccisione del thread")
         self.assertFalse(self.login.isRunning(),"Verifico se il comunicatore sta ancora girando")
          
 

@@ -271,11 +271,15 @@ class comunicatore(QtCore.QThread):
         Classe che ti disconnette da un server.
         Uccide il thread che ascolta e reimpostaa zero tutte le strutture dati.
         '''
-        self._socket.shutdown(socket.SHUT_RDWR)
-        self._socket.close()
+        try:
+            self._socket.shutdown(socket.SHUT_RDWR)
+            self._socket.close()
+        except:
+            self._logger.warning("Errore in disconnessione, resetto il socket.")
         self._socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-        self._receive_thread.setTerminationEnabled(True)
-        self._receive_thread._stop = True
+        if(self._receive_thread != None):
+            self._receive_thread.setTerminationEnabled(True)
+            self._receive_thread._stop = True
         self._postPlexer._userID = None
         self._messaggi = queue.Queue(255)
         
