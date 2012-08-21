@@ -20,11 +20,14 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-class MainWindow
+#include <QtGui>
+
+class MainWindow : public QMainWindow
 {
 
+  Q_OBJECT
 public:
-    MainWindow();
+    MainWindow(QWidget *parent = 0);
 };
 
 #endif // MAINWINDOW_H

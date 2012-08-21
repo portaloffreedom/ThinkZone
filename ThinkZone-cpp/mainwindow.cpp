@@ -19,8 +19,9 @@
 
 #include "mainwindow.h"
 
-MainWindow::MainWindow()
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
-
+    int i = 3;
+    i++;
 }
 

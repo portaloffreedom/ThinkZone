@@ -192,7 +192,7 @@ void SuperString::delSingleElem(elemListaString* elemento)
     delete elemento;
 }
 
-void SuperString::delElem(int pos, const int howmany){
+void SuperString::delElem(int pos, const int howmany) {
     if (pos < 0) {
         cerr<<"che cazzo stai cercando di eliminare???"<<endl;
         return;
@@ -263,7 +263,7 @@ void SuperString::delElem(int pos, const int howmany){
 
     //elimina ultima stringa
 
-    if (posAttuale->size == quanti_eliminare){
+    if (posAttuale->size == quanti_eliminare) {
         delSingleElem(posAttuale);
     }
     else {
@@ -274,106 +274,112 @@ void SuperString::delElem(int pos, const int howmany){
 
 }
 
-void errore(QString *s) 
+void errore(QString *s)
 {
-  cerr<<"######Errore:|"<<s->toStdString()<<"|\n";
+    cerr<<"######Errore:|"<<s->toStdString()<<"|\n";
 }
 void corretto(QString *s)
 {
-  cout<<"Corretto: "<<s->toStdString()<<endl;
+    cout<<"Corretto: "<<s->toStdString()<<endl;
 }
 
 bool testString(SuperString *superstringa, char *neutra, char *conSep, int &cont)
 {
-  cout<<"# "<<cont<<endl;
-  QString *stringa = superstringa->getComplete();
-  if (stringa != QString(neutra)) {
-    errore(stringa);
-    return false;
-  }
-  else 
-    corretto(stringa);
-  
-  stringa = superstringa->getCompleteWithSeparators();
-  
-  if (stringa != QString(conSep)) {
-    errore(stringa);
-    return false;
-  }
-  else 
-    corretto(stringa);
-  
-  cout<<"# "<<cont<<" eseguita"<<endl;
-  cont++;
-  return true;
+    cout<<"# "<<cont<<endl;
+    QString *stringa = superstringa->getComplete();
+    if (stringa != QString(neutra)) {
+        errore(stringa);
+        return false;
+    }
+    else
+        corretto(stringa);
+
+    stringa = superstringa->getCompleteWithSeparators();
+
+    if (stringa != QString(conSep)) {
+        errore(stringa);
+        return false;
+    }
+    else
+        corretto(stringa);
+
+    cout<<"# "<<cont<<" eseguita"<<endl;
+    cont++;
+    return true;
+}
+
+bool realTest(SuperString *prova)
+{
+    int i = 0;
+
+    //#1
+    if (!testString(prova,"","[0]",i))
+        return false;
+
+    //#2 ---insert---
+    prova->insElem("99", 0);
+    if (!testString(prova,"99", "99[2]",i))
+        return false;
+
+    //#3
+    prova->insElem("12!", 0);
+    if (!testString(prova,"12!99", "12!99[5]",i))
+        return false;
+
+    //#4
+    prova->insElem("###", 3);
+    if (!testString(prova,"12!###99", "12!###[6]99[2]",i))
+        return false;
+
+    //#5
+    prova->insElem("tro", 2);
+    if (!testString(prova,"12tro!###99", "12tro[5]!###[4]99[2]",i))
+        return false;
+
+    //#6 ----delete----
+    prova->delElem(1, 1);
+    if (!testString(prova,"1tro!###99", "1tro[4]!###[4]99[2]",i))
+        return false;
+
+    //#7
+    prova->delElem(4, 1);
+    if (!testString(prova,"1tro###99", "1tro[4]###[3]99[2]",i))
+        return false;
+
+    //#8
+    prova->delElem(4, 3);
+    if (!testString(prova,"1tro99", "1tro[4]99[2]",i))
+        return false;
+
+    //#9
+    prova->delElem(3, 1);
+    if (!testString(prova,"1tr99", "1tr[3]99[2]",i))
+        return false;
+
+    //#10
+    prova->delElem(0, 3);
+    if (!testString(prova,"99", "99[2]",i))
+        return false;
+
+    //#11
+    prova->insElem("porcoDioZoccolo", 0);
+    prova->insElem(" ", 8);
+    prova->insElem(" ", 5);
+    if (!testString(prova,"porco Dio Zoccolo99", "porco [6]Dio [4]Zoccolo99[9]",i))
+        return false;
+
+    //#12
+    prova->delElem(3, 15);
+    if (!testString(prova,"por9", "por[3]9[1]",i))
+        return false;
+        
+    return true;
 }
 
 bool SuperString::Test()
 {
   SuperString *prova = new SuperString();
-  int i = 0;
-  
-  //#1
-  if (!testString(prova,"","[0]",i))
-    return false;
-
-  //#2 ---insert---
-  prova->insElem("99", 0);
-  if (!testString(prova,"99", "99[2]",i))
-    return false;
-
-  //#3
-  prova->insElem("12!", 0);
-  if (!testString(prova,"12!99", "12!99[5]",i))
-    return false;
-
-  //#4
-  prova->insElem("###", 3);
-  if (!testString(prova,"12!###99", "12!###[6]99[2]",i))
-    return false;
-
-  //#5
-  prova->insElem("tro", 2);
-  if (!testString(prova,"12tro!###99", "12tro[5]!###[4]99[2]",i))
-    return false;
-
-  //#6 ----delete----
-  prova->delElem(1, 1);
-  if (!testString(prova,"1tro!###99", "1tro[4]!###[4]99[2]",i))
-    return false;
-
-  //#7
-  prova->delElem(4, 1);
-  if (!testString(prova,"1tro###99", "1tro[4]###[3]99[2]",i))
-    return false;
-
-  //#8
-  prova->delElem(4, 3);
-  if (!testString(prova,"1tro99", "1tro[4]99[2]",i))
-    return false;
-
-  //#9
-  prova->delElem(3, 1);
-  if (!testString(prova,"1tr99", "1tr[3]99[2]",i))
-    return false;
-
-  //#10
-  prova->delElem(0, 3);
-  if (!testString(prova,"99", "99[2]",i))
-    return false;
-
-  //#11
-  prova->insElem("porcoDioZoccolo", 0);
-  prova->insElem(" ", 8);
-  prova->insElem(" ", 5);
-  if (!testString(prova,"porco Dio Zoccolo99", "porco [6]Dio [4]Zoccolo99[9]",i))
-    return false;
-
-  //#12
-  prova->delElem(3, 15);
-  if (!testString(prova,"por9", "por[3]9[1]",i))
-    return false;
-  
-  
-  return true;
+  bool retVal = realTest(prova);  
+  delete prova;
+  return retVal;
 }
