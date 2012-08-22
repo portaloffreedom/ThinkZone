@@ -17,15 +17,17 @@
 */
 
 
-#include "mainwindow.h"
+#include "thinkzoneapp.h"
 
-MainWindow::MainWindow ( QWidget* parent, Qt::WindowFlags flags ) : QMainWindow ( parent, flags )
+ThinkzoneApp::ThinkzoneApp(int& argc, char** argv): QApplication(argc, argv)
 {
-
+    serverAddr = new QHostAddress(QHostAddress::LocalHost);
 }
 
-MainWindow::~MainWindow()
+ThinkzoneApp::~ThinkzoneApp()
 {
-
+    delete serverAddr;
 }
+
+
 

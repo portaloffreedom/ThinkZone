@@ -17,15 +17,25 @@
 */
 
 
+#ifndef THINKZONEAPP_H
+#define THINKZONEAPP_H
+
+#include <QtGui>
+#include <QHostAddress>
 #include "mainwindow.h"
 
-MainWindow::MainWindow ( QWidget* parent, Qt::WindowFlags flags ) : QMainWindow ( parent, flags )
+class ThinkzoneApp : public QApplication
 {
+  Q_OBJECT
+  
+public:
+    ThinkzoneApp(int& argc, char** argv);
+    ~ThinkzoneApp();
+    
+    MainWindow *mainwindow;
+    
+private:
+    QHostAddress *serverAddr;
+};
 
-}
-
-MainWindow::~MainWindow()
-{
-
-}
-
+#endif // THINKZONEAPP_H

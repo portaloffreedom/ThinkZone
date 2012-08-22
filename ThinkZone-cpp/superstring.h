@@ -5,6 +5,7 @@
 
 class SuperString
 {
+
 public:
     SuperString();
     ~SuperString();

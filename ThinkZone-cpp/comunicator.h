@@ -17,15 +17,39 @@
 */
 
 
-#include "mainwindow.h"
+#ifndef COMUNICATOR_H
+#define COMUNICATOR_H
 
-MainWindow::MainWindow ( QWidget* parent, Qt::WindowFlags flags ) : QMainWindow ( parent, flags )
+#include <QObject>
+#include <QThread>
+#include <QHostAddress>
+
+#define STD_PORT 4242
+#define STD_ADDRESS QHostAddress::LocalHost
+
+class Comunicator : public QObject
 {
+  Q_OBJECT
+public:
+  
+    explicit Comunicator(QObject *parent = 0, QHostAddress *address = new QHostAddress(STD_ADDRESS), quint16 port = STD_PORT);
+    ~Comunicator();
+    
+signals:
+    void finished();
+    void error(QString err);
+    
+private slots:
+    void process();
+    
+private:
+  
+  QThread *workerThread;
+  quint16 port;
+  QHostAddress *serverAddr;
+  
+public slots:
+    void runFinished();
+};
 
-}
-
-MainWindow::~MainWindow()
-{
-
-}
-
+#endif // COMUNICATOR_H

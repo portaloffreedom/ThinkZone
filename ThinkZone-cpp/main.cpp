@@ -17,5 +17,9 @@ int main(int argc, char **argv) {
     cout << "Hello, world!" << endl;
 //     return test_program();
     ThinkzoneApp a(argc,argv);
+    
+    MainWindow mainwindow;
+    mainwindow.show();
+    
     return a.exec();
 }
