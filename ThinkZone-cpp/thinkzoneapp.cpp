@@ -19,9 +19,9 @@
 
 #include "thinkzoneapp.h"
 
-ThinkzoneApp::ThinkzoneApp(int& argc, char** argv): QApplication(argc, argv)
+ThinkzoneApp::ThinkzoneApp ( int& argc, char** argv ) : QApplication ( argc, argv )
 {
-    serverAddr = new QHostAddress(QHostAddress::LocalHost);
+    serverAddr = new QHostAddress ( QHostAddress::LocalHost );
 }
 
 ThinkzoneApp::~ThinkzoneApp()

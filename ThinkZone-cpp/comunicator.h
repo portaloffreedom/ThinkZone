@@ -29,25 +29,25 @@
 
 class Comunicator : public QObject
 {
-  Q_OBJECT
+    Q_OBJECT
 public:
-  
-    explicit Comunicator(QObject *parent = 0, QHostAddress *address = new QHostAddress(STD_ADDRESS), quint16 port = STD_PORT);
+
+    explicit Comunicator ( QObject *parent = 0, QHostAddress *address = new QHostAddress ( STD_ADDRESS ), quint16 port = STD_PORT );
     ~Comunicator();
-    
+
 signals:
     void finished();
-    void error(QString err);
-    
+    void error ( QString err );
+
 private slots:
     void process();
-    
+
 private:
-  
-  QThread *workerThread;
-  quint16 port;
-  QHostAddress *serverAddr;
-  
+
+    QThread *workerThread;
+    quint16 port;
+    QHostAddress *serverAddr;
+
 public slots:
     void runFinished();
 };

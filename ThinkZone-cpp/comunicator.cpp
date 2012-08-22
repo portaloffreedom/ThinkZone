@@ -20,17 +20,17 @@
 using namespace std;
 #include "comunicator.h"
 
-Comunicator::Comunicator ( QObject* parent,QHostAddress *serverAddr, quint16 port) : QObject(parent)
+Comunicator::Comunicator ( QObject* parent,QHostAddress *serverAddr, quint16 port ) : QObject ( parent )
 {
     this->serverAddr = serverAddr;
     this->port = port;
-    
+
     workerThread = new QThread();
-    this->moveToThread(workerThread);
-    connect(workerThread,SIGNAL(started()),this,SLOT(process()));
-    connect(this,SIGNAL(finished()),workerThread,SLOT(quit()));
-    connect(this,SIGNAL(finished()),this,SLOT(deleteLater()));
-    connect(workerThread,SIGNAL(finished()),workerThread,SLOT(deleteLater()));
+    this->moveToThread ( workerThread );
+    connect ( workerThread,SIGNAL ( started() ),this,SLOT ( process() ) );
+    connect ( this,SIGNAL ( finished() ),workerThread,SLOT ( quit() ) );
+    connect ( this,SIGNAL ( finished() ),this,SLOT ( deleteLater() ) );
+    connect ( workerThread,SIGNAL ( finished() ),workerThread,SLOT ( deleteLater() ) );
 }
 
 Comunicator::~Comunicator()
@@ -42,7 +42,7 @@ Comunicator::~Comunicator()
 void Comunicator::process()
 {
     cout<<"CIAO MONDO DAL THREAD COMUNICATORE!! :D"<<endl;
-  
+
     emit finished();
     return;
 }

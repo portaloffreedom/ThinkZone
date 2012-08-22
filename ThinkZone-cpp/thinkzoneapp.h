@@ -26,14 +26,14 @@
 
 class ThinkzoneApp : public QApplication
 {
-  Q_OBJECT
-  
+    Q_OBJECT
+
 public:
-    ThinkzoneApp(int& argc, char** argv);
+    ThinkzoneApp ( int& argc, char** argv );
     ~ThinkzoneApp();
-    
+
     MainWindow *mainwindow;
-    
+
 private:
     QHostAddress *serverAddr;
 };
